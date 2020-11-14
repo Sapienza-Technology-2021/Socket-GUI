@@ -1,28 +1,16 @@
-# This Python file uses the following encoding: utf-8
+from PyQt5 import QtWidgets, uic
 import sys
-import os
 
 
-from PySide2.QtWidgets import QApplication, QMainWindow
-from PySide2.QtCore import QFile
-from PySide2.QtUiTools import QUiLoader
-
-
-class Main(QMainWindow):
+class Ui(QtWidgets.QMainWindow):
     def __init__(self):
-        super(Main, self).__init__()
-        self.load_ui()
+        super(Ui, self).__init__()
+        uic.loadUi('form.ui', self)
+        self.show()
 
-    def load_ui(self):
-        loader = QUiLoader()
-        path = os.path.join(os.path.dirname(__file__), "form.ui")
-        ui_file = QFile(path)
-        ui_file.open(QFile.ReadOnly)
-        loader.load(ui_file, self)
-        ui_file.close()
 
 if __name__ == "__main__":
-    app = QApplication([])
-    widget = Main()
+    app = QtWidgets.QApplication([])
+    widget = Ui()
     widget.show()
     sys.exit(app.exec_())
