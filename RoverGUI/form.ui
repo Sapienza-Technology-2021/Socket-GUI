@@ -30,9 +30,9 @@
     <item row="1" column="0" colspan="4">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
-      <widget class="QWidget" name="tab">
+      <widget class="QWidget" name="sensorsTab">
        <attribute name="title">
         <string>Sensori</string>
        </attribute>
@@ -44,7 +44,7 @@
          <number>15</number>
         </property>
         <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
+         <widget class="QLabel" name="accelLabel">
           <property name="text">
            <string>Accelerometro:</string>
           </property>
@@ -54,40 +54,40 @@
          </widget>
         </item>
         <item row="1" column="1" colspan="2">
-         <layout class="QGridLayout" name="gridLayout_3">
+         <layout class="QGridLayout" name="accelLayout">
           <item row="0" column="1">
-           <widget class="QLCDNumber" name="lcdNumber"/>
+           <widget class="QLCDNumber" name="xAccelNumber"/>
           </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="label_3">
+           <widget class="QLabel" name="xAccelLabel">
             <property name="text">
              <string>X =</string>
             </property>
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QLCDNumber" name="lcdNumber_2"/>
+           <widget class="QLCDNumber" name="yAccelNumber"/>
           </item>
           <item row="1" column="0">
-           <widget class="QLabel" name="label_4">
+           <widget class="QLabel" name="yAccelLabel">
             <property name="text">
              <string>Y =</string>
             </property>
            </widget>
           </item>
+          <item row="2" column="1">
+           <widget class="QLCDNumber" name="zAccelNumber"/>
+          </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="label_5">
+           <widget class="QLabel" name="zAccelLabel">
             <property name="text">
              <string>Z =</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QLCDNumber" name="lcdNumber_3"/>
-          </item>
          </layout>
         </item>
-        <item row="2" column="2">
+        <item row="2" column="1" colspan="2">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -102,7 +102,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab_2">
+      <widget class="QWidget" name="moveTab">
        <attribute name="title">
         <string>Movimento</string>
        </attribute>
@@ -110,33 +110,33 @@
      </widget>
     </item>
     <item row="0" column="3">
-     <widget class="QPushButton" name="pushButton">
+     <widget class="QPushButton" name="connectButton">
       <property name="text">
        <string>Connetti</string>
       </property>
      </widget>
     </item>
     <item row="0" column="0">
-     <widget class="QLabel" name="label">
+     <widget class="QLabel" name="ipLabel">
       <property name="text">
        <string>IP rover:</string>
       </property>
      </widget>
     </item>
     <item row="0" column="2">
-     <widget class="QLineEdit" name="lineEdit"/>
+     <widget class="QLineEdit" name="ipField"/>
     </item>
     <item row="2" column="0" colspan="4">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QLabel" name="label_6">
+       <widget class="QLabel" name="batteryLabel">
         <property name="text">
          <string>Livello batteria:</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLCDNumber" name="lcdNumber_5"/>
+       <widget class="QLCDNumber" name="batteryNumber"/>
       </item>
       <item>
        <widget class="Line" name="line">
@@ -146,14 +146,14 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="label_7">
+       <widget class="QLabel" name="cpuTempLabel">
         <property name="text">
          <string>Temperatura CPU:</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLCDNumber" name="lcdNumber_6"/>
+       <widget class="QLCDNumber" name="cpuTempNumber"/>
       </item>
      </layout>
     </item>
