@@ -101,7 +101,7 @@
        </font>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="sensorsTab">
        <attribute name="title">
@@ -115,7 +115,7 @@
          <number>15</number>
         </property>
         <item row="1" column="2">
-         <widget class="QLabel" name="label_11">
+         <widget class="QLabel" name="accelUnitLabel">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -148,7 +148,7 @@
          </widget>
         </item>
         <item row="4" column="0">
-         <widget class="QLabel" name="label_10">
+         <widget class="QLabel" name="irDistLabel">
           <property name="font">
            <font>
             <pointsize>11</pointsize>
@@ -165,7 +165,7 @@
          </widget>
         </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="label">
+         <widget class="QLabel" name="gyroLabel">
           <property name="font">
            <font>
             <pointsize>11</pointsize>
@@ -182,7 +182,7 @@
          </widget>
         </item>
         <item row="3" column="0">
-         <widget class="QLabel" name="label_5">
+         <widget class="QLabel" name="magnLabel">
           <property name="font">
            <font>
             <pointsize>11</pointsize>
@@ -257,10 +257,10 @@
         <item row="2" column="1">
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="1" column="1">
-           <widget class="QLCDNumber" name="lcdNumber_2"/>
+           <widget class="QLCDNumber" name="gyroYNumber"/>
           </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="label_2">
+           <widget class="QLabel" name="gyroXLabel">
             <property name="font">
              <font>
               <pointsize>9</pointsize>
@@ -272,10 +272,10 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QLCDNumber" name="lcdNumber"/>
+           <widget class="QLCDNumber" name="gyroXNumber"/>
           </item>
           <item row="1" column="0">
-           <widget class="QLabel" name="label_3">
+           <widget class="QLabel" name="gyroYLabel">
             <property name="font">
              <font>
               <pointsize>9</pointsize>
@@ -287,7 +287,7 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="label_4">
+           <widget class="QLabel" name="gyroZLabel">
             <property name="font">
              <font>
               <pointsize>9</pointsize>
@@ -299,14 +299,14 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QLCDNumber" name="lcdNumber_3"/>
+           <widget class="QLCDNumber" name="gyroZNumber"/>
           </item>
          </layout>
         </item>
         <item row="3" column="1">
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="1" column="0">
-           <widget class="QLabel" name="label_7">
+           <widget class="QLabel" name="magnYLabel">
             <property name="font">
              <font>
               <pointsize>9</pointsize>
@@ -318,7 +318,7 @@
            </widget>
           </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="label_6">
+           <widget class="QLabel" name="magnXLabel">
             <property name="font">
              <font>
               <pointsize>9</pointsize>
@@ -330,13 +330,13 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QLCDNumber" name="lcdNumber_4"/>
+           <widget class="QLCDNumber" name="magnXNumber"/>
           </item>
           <item row="1" column="1">
-           <widget class="QLCDNumber" name="lcdNumber_5"/>
+           <widget class="QLCDNumber" name="magnYNumber"/>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="label_8">
+           <widget class="QLabel" name="magnZLabel">
             <property name="font">
              <font>
               <pointsize>9</pointsize>
@@ -348,29 +348,29 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QLCDNumber" name="lcdNumber_6"/>
+           <widget class="QLCDNumber" name="magnZNumber"/>
           </item>
          </layout>
         </item>
         <item row="4" column="1">
-         <widget class="QLCDNumber" name="lcdNumber_7"/>
+         <widget class="QLCDNumber" name="irDistNumber"/>
         </item>
         <item row="2" column="2">
-         <widget class="QLabel" name="label_12">
+         <widget class="QLabel" name="gyroUnitLabel">
           <property name="text">
            <string>rad/s</string>
           </property>
          </widget>
         </item>
         <item row="3" column="2">
-         <widget class="QLabel" name="label_13">
+         <widget class="QLabel" name="magnUnitLabel">
           <property name="text">
            <string>uT</string>
           </property>
          </widget>
         </item>
         <item row="4" column="2">
-         <widget class="QLabel" name="label_14">
+         <widget class="QLabel" name="distanceUnitLabel">
           <property name="text">
            <string>cm</string>
           </property>
@@ -384,7 +384,7 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_5">
         <item row="4" column="1">
-         <widget class="QPushButton" name="pushButton_2">
+         <widget class="QPushButton" name="moveDown">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -415,7 +415,7 @@
          </widget>
         </item>
         <item row="3" column="0">
-         <widget class="QPushButton" name="pushButton_4">
+         <widget class="QPushButton" name="moveLeft">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -446,7 +446,7 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QPushButton" name="pushButton_3">
+         <widget class="QPushButton" name="moveStop">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -477,7 +477,7 @@
          </widget>
         </item>
         <item row="5" column="1" colspan="2">
-         <widget class="QSlider" name="horizontalSlider">
+         <widget class="QSlider" name="speedSlider">
           <property name="maximum">
            <number>255</number>
           </property>
@@ -502,7 +502,7 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QPushButton" name="moveUp">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -533,7 +533,7 @@
          </widget>
         </item>
         <item row="4" column="0">
-         <widget class="QPushButton" name="pushButton_8">
+         <widget class="QPushButton" name="moveDownLeft">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -564,7 +564,7 @@
          </widget>
         </item>
         <item row="3" column="2">
-         <widget class="QPushButton" name="pushButton_5">
+         <widget class="QPushButton" name="moveRight">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -595,7 +595,7 @@
          </widget>
         </item>
         <item row="1" column="2">
-         <widget class="QPushButton" name="pushButton_7">
+         <widget class="QPushButton" name="moveUpRight">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -626,7 +626,7 @@
          </widget>
         </item>
         <item row="4" column="2">
-         <widget class="QPushButton" name="pushButton_9">
+         <widget class="QPushButton" name="moveDownRight">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -657,7 +657,7 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QPushButton" name="pushButton_6">
+         <widget class="QPushButton" name="moveUpLeft">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -688,7 +688,7 @@
          </widget>
         </item>
         <item row="5" column="0">
-         <widget class="QLabel" name="label_9">
+         <widget class="QLabel" name="speedLabel">
           <property name="font">
            <font>
             <pointsize>11</pointsize>
@@ -700,7 +700,7 @@
          </widget>
         </item>
         <item row="6" column="0">
-         <widget class="QLabel" name="label_15">
+         <widget class="QLabel" name="statusLabel">
           <property name="font">
            <font>
             <pointsize>11</pointsize>
@@ -712,7 +712,7 @@
          </widget>
         </item>
         <item row="6" column="1" colspan="2">
-         <widget class="QLabel" name="label_16">
+         <widget class="QLabel" name="statusField">
           <property name="font">
            <font>
             <pointsize>11</pointsize>
