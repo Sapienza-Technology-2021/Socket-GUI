@@ -17,6 +17,7 @@ class Ui(QtWidgets.QMainWindow):
         # da fare in modo che possa essere inserito solo un indirizzo ip valido
         if ip == "":
             print("Errore: nessun indirizzo ip inserito")
+
         else:
             print("Mi sto connettendo a... " + ip)
             time.sleep(2)  # da sostituire con gestione dell'errore
@@ -24,6 +25,7 @@ class Ui(QtWidgets.QMainWindow):
             if connectionOutput in range(0, 50):
                 print("Connessione fallita!")
                 QMessageBox.about(self, "Errore", "Connessione fallita")
+
             else:
                 print("Connessione riuscita!")
                 # questa parte andrà modificata con i valori ricevuti dalla socket
