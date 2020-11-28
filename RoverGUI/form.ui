@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>792</width>
-    <height>572</height>
+    <width>791</width>
+    <height>631</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -210,6 +210,9 @@
             <property name="text">
              <string>Y =</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="2" column="1">
@@ -238,6 +241,9 @@
             <property name="text">
              <string>X =</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="2" column="0">
@@ -249,6 +255,9 @@
             </property>
             <property name="text">
              <string>Z =</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -269,6 +278,9 @@
             <property name="text">
              <string>X =</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="0" column="1">
@@ -284,6 +296,9 @@
             <property name="text">
              <string>Y =</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="2" column="0">
@@ -295,6 +310,9 @@
             </property>
             <property name="text">
              <string>Z =</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -315,6 +333,9 @@
             <property name="text">
              <string>Y =</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="0" column="0">
@@ -326,6 +347,9 @@
             </property>
             <property name="text">
              <string>X =</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -344,6 +368,9 @@
             </property>
             <property name="text">
              <string>Z =</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -737,7 +764,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>792</width>
+     <width>791</width>
      <height>21</height>
     </rect>
    </property>

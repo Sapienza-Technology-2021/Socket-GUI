@@ -3,16 +3,18 @@ import time
 import random
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import QMessageBox
+from rover import Rover
 
-
-class Ui(QtWidgets.QMainWindow):
+class RoverUi(QtWidgets.QMainWindow):
     def __init__(self):
-        super(Ui, self).__init__()
+        super(RoverUi, self).__init__()
         uic.loadUi('form.ui', self)
         self.show()
         self.connectButton.clicked.connect(self.clicked)  # listener
 
     def clicked(self):  # funzione eseguita dal bottone
+        r = Rover()
+        r.printCiao()
         ip = self.ipField.text()
         # da fare in modo che possa essere inserito solo un indirizzo ip valido
         if ip == "":
@@ -36,9 +38,13 @@ class Ui(QtWidgets.QMainWindow):
                 self.batteryNumber.display(100)
                 self.cpuTempNumber.display(random.randint(0, 100))
 
+    def updateAccel(self, xyz):
+        pass
+
 
 if __name__ == "__main__":
+    # nuovo thread socket... chiamato roverSocket
     app = QtWidgets.QApplication([])
-    widget = Ui()
-    widget.show()
+    roverUi = RoverUi()
+    roverUi.show()
     sys.exit(app.exec_())
