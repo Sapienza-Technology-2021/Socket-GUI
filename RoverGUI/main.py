@@ -3,47 +3,86 @@ import time
 import random
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import QMessageBox
-from rover import Rover
+
 
 class RoverUi(QtWidgets.QMainWindow):
     def __init__(self):
         super(RoverUi, self).__init__()
         uic.loadUi('form.ui', self)
         self.show()
-        self.connectButton.clicked.connect(self.clicked)  # listener
+        self.connectButton.clicked.connect(self.connectBtnListener)
+        self.moveUp.clicked.connect(self.moveUpListener)
+        self.moveDown.clicked.connect(self.moveDownListener)
+        self.moveLeft.clicked.connect(self.moveLeftListener)
+        self.moveRight.clicked.connect(self.moveRightListener)
+        self.moveUpRight.clicked.connect(self.moveUpRightListener)
+        self.moveUpLeft.clicked.connect(self.moveUpLeftListener)
+        self.moveDownLeft.clicked.connect(self.moveDownLeftListener)
+        self.moveDownRight.clicked.connect(self.moveDownRightListener)
+        self.moveStop.clicked.connect(self.moveStopListener)
 
-    def clicked(self):  # funzione eseguita dal bottone
-        r = Rover()
-        r.printCiao()
+    def connectBtnListener(self):
         ip = self.ipField.text()
-        # da fare in modo che possa essere inserito solo un indirizzo ip valido
         if ip == "":
-            print("Errore: nessun indirizzo ip inserito")
-
+            QMessageBox.warning(self, "Errore", "Nessun IP inserito!")
         else:
-            print("Mi sto connettendo a... " + ip)
-            time.sleep(2)  # da sostituire con gestione dell'errore
-            connectionOutput = random.randint(0, 100)
-            if connectionOutput in range(0, 50):
-                print("Connessione fallita!")
-                QMessageBox.about(self, "Errore", "Connessione fallita")
+            pass
+            # Connetti socket
+            # QMessageBox.warning(self, "Errore", "Connessione fallita!")
 
-            else:
-                print("Connessione riuscita!")
-                # questa parte andrà modificata con i valori ricevuti dalla socket
-                randAccel = random.randint(100, 1000)/10
-                self.xAccelNumber.display("{:.1f}".format(randAccel))
-                self.yAccelNumber.display("{:.1f}".format(randAccel * 0.1 + 30))
-                self.zAccelNumber.display("{:.1f}".format(randAccel * 0.15 + 45))
-                self.batteryNumber.display(100)
-                self.cpuTempNumber.display(random.randint(0, 100))
+    def moveUpListener(self):
+        self.roverSocket.move([0, 1], speedSlider.value())
+
+    def moveDownListener(self):
+        self.roverSocket.move([0, -1], speedSlider.value())
+
+    def moveLeftListener(self):
+        self.roverSocket.move([-1, 0], speedSlider.value())
+
+    def moveRightListener(self):
+        self.roverSocket.move([1, 0], speedSlider.value())
+
+    def moveUpRightListener(self):
+        self.roverSocket.move([1, 1], speedSlider.value())
+
+    def moveUpLeftListener(self):
+        self.roverSocket.move([1, -1], speedSlider.value())
+
+    def moveDownLeftListener(self):
+        self.roverSocket.move([-1, -1], speedSlider.value())
+
+    def moveDownRightListener(self):
+        self.roverSocket.move([-1, 1], speedSlider.value())
+
+    def moveStopListener(self):
+        self.roverSocket.stop()
 
     def updateAccel(self, xyz):
-        pass
+        self.accelXNumber.display("{:.1f}".format(xyz[0]))
+        self.accelYNumber.display("{:.1f}".format(xyz[1]))
+        self.accelZNumber.display("{:.1f}".format(xyz[2]))
 
+    def updateGyro(self, xyz):
+        self.gyroXNumber.display("{:.1f}".format(xyz[0]))
+        self.gyroYNumber.display("{:.1f}".format(xyz[1]))
+        self.gyroZNumber.display("{:.1f}".format(xyz[2]))
+
+    def updateMagn(self, xyz):
+        self.magnXNumber.display("{:.1f}".format(xyz[0]))
+        self.magnYNumber.display("{:.1f}".format(xyz[1]))
+        self.magnZNumber.display("{:.1f}".format(xyz[2]))
+
+    def updateIrDistance(self, dist):
+        self.irDistNumber.display("{:.1f}".format(dist))
+
+    def updateBatt(self, val):
+        self.batteryNumber.display("{:.1f}".format(val))
+
+    def updateCpuTemp(self, val):
+        self.cpuTempNumber.display("{:.1f}".format(val))
 
 if __name__ == "__main__":
-    # nuovo thread socket... chiamato roverSocket
+    # nuovo thread socket... avvia socket
     app = QtWidgets.QApplication([])
     roverUi = RoverUi()
     roverUi.show()

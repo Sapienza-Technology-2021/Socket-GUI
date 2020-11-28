@@ -201,7 +201,7 @@
         <item row="1" column="1">
          <layout class="QGridLayout" name="accelLayout">
           <item row="1" column="0">
-           <widget class="QLabel" name="yAccelLabel">
+           <widget class="QLabel" name="accelYLabel">
             <property name="font">
              <font>
               <pointsize>9</pointsize>
@@ -216,10 +216,10 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QLCDNumber" name="zAccelNumber"/>
+           <widget class="QLCDNumber" name="accelZNumber"/>
           </item>
           <item row="0" column="1">
-           <widget class="QLCDNumber" name="xAccelNumber">
+           <widget class="QLCDNumber" name="accelXNumber">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
               <horstretch>0</horstretch>
@@ -229,10 +229,10 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QLCDNumber" name="yAccelNumber"/>
+           <widget class="QLCDNumber" name="accelYNumber"/>
           </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="xAccelLabel">
+           <widget class="QLabel" name="accelXLabel">
             <property name="font">
              <font>
               <pointsize>9</pointsize>
@@ -247,7 +247,7 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="zAccelLabel">
+           <widget class="QLabel" name="accelZLabel">
             <property name="font">
              <font>
               <pointsize>9</pointsize>
