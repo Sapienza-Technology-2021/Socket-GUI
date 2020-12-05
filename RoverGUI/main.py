@@ -3,9 +3,10 @@ import time
 import random
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import QMessageBox
+from clientinterface import ClientInterface
 
 
-class RoverUi(QtWidgets.QMainWindow):
+class RoverUi(QtWidgets.QMainWindow, ClientInterface):
     def __init__(self):
         super(RoverUi, self).__init__()
         uic.loadUi('form.ui', self)
@@ -29,6 +30,11 @@ class RoverUi(QtWidgets.QMainWindow):
             pass
             # Connetti socket
             # QMessageBox.warning(self, "Errore", "Connessione fallita!")
+
+    def updateAccel(self, xyz):
+        self.accelXNumber.display("{:.1f}".format(xyz[0]))
+        self.accelYNumber.display("{:.1f}".format(xyz[1]))
+        self.accelZNumber.display("{:.1f}".format(xyz[2]))
 
     def moveUpListener(self):
         self.roverSocket.move([0, 1], speedSlider.value())
@@ -56,11 +62,6 @@ class RoverUi(QtWidgets.QMainWindow):
 
     def moveStopListener(self):
         self.roverSocket.stop()
-
-    def updateAccel(self, xyz):
-        self.accelXNumber.display("{:.1f}".format(xyz[0]))
-        self.accelYNumber.display("{:.1f}".format(xyz[1]))
-        self.accelZNumber.display("{:.1f}".format(xyz[2]))
 
     def updateGyro(self, xyz):
         self.gyroXNumber.display("{:.1f}".format(xyz[0]))
