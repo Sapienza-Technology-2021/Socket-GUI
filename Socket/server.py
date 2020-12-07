@@ -8,33 +8,89 @@ class Server:
         self.ip = ""
         self.port = 22222
         self.data = {}
+        self.conns = {}
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.th_flag = 0
         self.ack_server_th()
         self.inizializza_th()
 
     def inizializza(self):
-        self.socket.bind((self.ip, self.port))
-        self.socket.listen() 
+        try:
+            self.socket.bind((self.ip, self.port))
+            self.socket.setblocking(0) 
+            self.socket.listen()
+
+        except Exception as e:
+            time.sleep(1)
+            print(e.args[0])
+            self.inizializza()
+
         print("Server in ascolto...")
-        while not self.th_flag:
-            conn, addr = self.socket.accept()
-            print(self.socket)
-            print("Client connesso. Indirizzo: ",addr)
-            #Verificare eccezioni client non connesso
-            #provare con timeout messaggi e risposte per verificare se il client riceve
-            #self.socket.accept usa un socket bloccante quindi non verificherà se th_flag è cambiata e se il socket è chiuso
-                 
+        while True:
+            try:
+                conn, addr = self.socket.accept()
+                #print(self.socket)
+                print("Client connesso. Indirizzo: ",addr)
+                if(len(self.conns) <= 16):
+                    x = threading.Thread(target = self.client_handler, args = ([conn]))
+                    x.start()
+                    self.conns[conn] = x
+                    print("Numero threads: ",len(self.conns))
+                else:
+                    print("Numero di threads massimo raggiunto")
+                    #send alert
+                    #clean()
+            
+            except BlockingIOError:
+                pass
+
+            except Exception as e:
+                print(e.args[0])
+                time.sleep(1)
+
+            for i in list(self.conns):
+                if(not self.conns[i].is_alive()):
+                    del self.conns[i]
+                    print("Numero Threads: ",len(self.conns))          
+            if(self.th_flag):
+                self.th_flag = 0
+                print("Quitting main server...")
+                exit(0)
+
+    def client_handler(self,conn):
+        print("Entering Thread")
+        th_data = threading.local()
+        th_data.isclientalive = 1
+        conn.settimeout(10)
+        while ((not self.th_flag) and (th_data.isclientalive)):
+            try:
+                th_data.buffer = conn.recv(4096)
+                if(th_data.buffer == b""):
+                    raise Exception
+                print(th_data.buffer)
+            except socket.timeout:
+                print("Connection timeout")
+                conn.close()
+                th_data.isclientalive = 0
+            except:
+                conn.close()
+                th_data.isclientalive = 0
+                print("Disconnesso")
+        exit(0)
+
+
     def ack_server(self):
         try:
             ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            ack_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             ack_socket.settimeout(1.5)
             ack_socket.bind(("", 12345))
             print("ACK SERVER in ascolto")
-
-        except:
+        except Exception as e:
             print("Errore di inizializzazione ACK SERVER")
-            time.sleep(0.5)
+            print(e.args[0])
+            time.sleep(1)
             self.ack_server()
 
         while True:
@@ -73,12 +129,6 @@ class Server:
         self.th_flag = 1
         self.ack_th_flag = 1
         self.socket.close()
-
-    def send(self,data):
-        pass
-
-    def recv(self):
-        pass
 
 server = Server()
 
