@@ -24,19 +24,22 @@ class Parser:
                 print("Messaggio corrotto ",i)
                 return
         self.parse(data)
-        
+
     def parse(self,dict):
         try:
-            data = json.loads(dict)
-            print(data)
+            loaded = json.loads(dict)
+            print(loaded)
+            self.load_data(loaded)
         except json.JSONDecodeError:
             print("Dizionario corrotto")
         except Exception as e:
-            print("Codice errore: ",e.args[0])
-        self.load_data(data)
-    
+            print("Codice errore: ", e.args[0])
+
     def load_data(self,data):
-        pass
+        try:
+            print(data["saluto"])
+        except Exception:
+            pass
 
 class Server(Parser):
     def __init__(self):
@@ -99,7 +102,7 @@ class Server(Parser):
         info = conn.getpeername()
         th_data = threading.local()
         th_data.isclientalive = 1
-        conn.settimeout(10)
+        conn.settimeout(10000)
         message = ""
         count = 0
         while ((not self.th_flag) and (th_data.isclientalive)):
