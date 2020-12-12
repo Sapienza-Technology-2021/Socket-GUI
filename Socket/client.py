@@ -4,8 +4,9 @@ import time
 import socket
 import threading
 class Socket:
-    def __init__(self):
+    def __init__(self,UI): #usare UI = None?
         self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.ui = UI
         self.is_connected = 0
         self.server_ip = ""
         self.server_port = 22222
@@ -93,11 +94,16 @@ class Socket:
             print("Errore riscontrato in fase di connessione")
             self.is_connected = 0
 
-    
-connection = Socket()
-while True:
-    try:
-        time.sleep(1)
-    except KeyboardInterrupt:
-        connection.stopscan()
-        exit(0)
+class Qt:
+    def __init__(self):
+        connection = Socket(self)
+        while True:
+            try:
+                time.sleep(1)
+            except KeyboardInterrupt:
+                connection.stopscan()
+                exit(0)
+    def ext(self):
+        print("BUM!")
+
+app = Qt()

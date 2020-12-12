@@ -2,9 +2,45 @@ import socket
 import time
 import threading
 import sys
+import json
 
-class Server:
+class Parser:
     def __init__(self):
+        self.comandi = {"comando":self.elabora}
+        pass
+    def elabora(self,data):
+        lb = data.count("{")
+        rb = data.count("}")
+        if(lb != rb or lb == 0 or data[0]!="{" or data[len(data)-1]!="}"):
+            print("Messaggio corrotto")
+            return
+        count = 0
+        for i in range(len(data)):
+            if(data[i] == "{"):
+                count += 1
+            elif(data[i] == "}"):
+                count -= 1
+            if(count == 0 and ((i+1) != len(data)) and i != 0):
+                print("Messaggio corrotto ",i)
+                return
+        self.parse(data)
+        
+    def parse(self,dict):
+        try:
+            data = json.loads(dict)
+            print(data)
+        except json.JSONDecodeError:
+            print("Dizionario corrotto")
+        except Exception as e:
+            print("Codice errore: ",e.args[0])
+        self.load_data(data)
+    
+    def load_data(self,data):
+        pass
+
+class Server(Parser):
+    def __init__(self):
+        super().__init__()
         self.ip = ""
         self.port = 22222
         self.data = {}
@@ -23,7 +59,7 @@ class Server:
 
         except Exception as e:
             time.sleep(1)
-            print(e.args[0])
+            print("Codice errore: ",e.args[0])
             self.inizializza()
 
         print("Server in ascolto...")
@@ -52,7 +88,7 @@ class Server:
             for i in list(self.conns):
                 if(not self.conns[i].is_alive()):
                     del self.conns[i]
-                    print("Numero Threads: ",len(self.conns))          
+                    print("Numero Threads: ",len(self.conns))
             if(self.th_flag):
                 self.th_flag = 0
                 print("Quitting main server...")
@@ -60,23 +96,39 @@ class Server:
 
     def client_handler(self,conn):
         print("Entering Thread")
+        info = conn.getpeername()
         th_data = threading.local()
         th_data.isclientalive = 1
         conn.settimeout(10)
+        message = ""
+        count = 0
         while ((not self.th_flag) and (th_data.isclientalive)):
             try:
-                th_data.buffer = conn.recv(4096)
+                th_data.buffer = conn.recv(1024).decode()
+                marker = th_data.buffer.find("\n")
+                if(marker >= 0):
+                    message += th_data.buffer[:marker]
+                    self.elabora(message)
+                    message = ""
+                    count = 0
+                else:
+                    count += 1
+                    if(count > 1000):
+                        raise socket.timeout
+                    message += th_data.buffer
                 if(th_data.buffer == b""):
                     raise Exception
-                print(th_data.buffer)
+                #print(th_data.buffer)
             except socket.timeout:
-                print("Connection timeout")
+                print("Connection timeout: ", info)
                 conn.close()
                 th_data.isclientalive = 0
-            except:
+            except Exception as e:
+                print("there")
                 conn.close()
                 th_data.isclientalive = 0
-                print("Disconnesso")
+                print(e.args[0])
+                print("Disconnesso ", info)
         exit(0)
 
 
