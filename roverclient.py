@@ -71,11 +71,14 @@ class RoverClient(RoverInterface):
         #funzione per inviare dati
         if self.connected:
             try:
+                data = json.dumps(data)
+                self.sock.send(data.encode())
                 #invia dati
                 pass
             except:
                 #connessione caduta?
-                self.connected = 0
+                #traceback.print_exc()
+                self.disconnect()
 
     def stopscan(self):
         print("Stopping thread...")
@@ -119,6 +122,7 @@ class RoverClient(RoverInterface):
 
     def move(self, speed):
         super(RoverClient, self).move(speed)
+        self.send("{'move':"+str(speed)+"}\n")
         # Invia comando muovi
 
     def moveRotate(self, speed, degPerMin):
