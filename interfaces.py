@@ -2,6 +2,7 @@ import threading
 
 
 APP_NAME = "Tech Team Rover"
+PORT = 12345
 DEBUG = True
 
 def debug(msg):

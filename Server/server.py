@@ -2,7 +2,7 @@ import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir) 
-from interfaces import debug, InterruptableEvent
+from interfaces import debug, InterruptableEvent, PORT
 from threading import Event
 import traceback
 import socket
@@ -11,8 +11,6 @@ import threading
 import sys
 import json
 
-
-PORT = 12345
 
 class RoverServer(): 
     def __init__(self, port):
@@ -46,19 +44,19 @@ class RoverServer():
         try:
             while self.th_flag:
                 conn, addr = self.socket.accept()
-                debug("Client connesso. Indirizzo: ",addr)
+                debug("Client connesso. Indirizzo: " + str(addr[0]))
                 if len(self.conns) <= 16:
                     x = threading.Thread(target=self.clientHandler, args=([conn]), daemon=True)
                     x.start()
                     self.conns[conn] = x
-                    debug("Numero threads: ",len(self.conns))
+                    debug("Numero threads: " + str(len(self.conns)))
                 else:
                     debug("Numero di threads massimo raggiunto!")
                     conn.close()
                 for i in list(self.conns):
                     if (not self.conns[i].is_alive()):
                         del self.conns[i]
-                        debug("Numero connessioni: ", len(self.conns))
+                        debug("Numero connessioni: " + str(len(self.conns)))
         except BlockingIOError:
             debug("Blocking IO error")
         except Exception as e:
@@ -85,22 +83,20 @@ class RoverServer():
             elif data[i] == "}":
                 count -= 1
             if count == 0 and (i + 1) != len(data) and i != 0:
-                debug("Messaggio corrotto ",i)
+                debug("Messaggio corrotto " + str(i))
                 return
         try:
-            loaded = json.loads(dict)
-            debug("Loaded JSON:")
-            debug(loaded)
+            loaded = json.loads(data)
             if "move" in loaded:
-                debug("Move " + loaded["move"])
+                debug("Move " + str(loaded["move"]))
             if "moveRotate" in loaded:
-                debug("MoveRotate " + loaded["moveRotate"][0] + " " + loaded["moveRotate"][1])
+                debug("MoveRotate " + str(loaded["moveRotate"][0]) + " " + str(loaded["moveRotate"][1]))
             if "rotate" in loaded:
-                debug("Rotate " + loaded["rotate"])
+                debug("Rotate " + str(loaded["rotate"]))
             if "stop" in loaded:
-                debug("Stop " + loaded["stop"])
+                debug("Stop " + str(loaded["stop"]))
             if "setMLEnabled" in loaded:
-                debug("Set ML " + loaded["setMLEnabled"])
+                debug("Set ML " + str(loaded["setMLEnabled"]))
         except json.JSONDecodeError:
             debug("Dizionario corrotto!")
             traceback.print_exc()
@@ -109,7 +105,7 @@ class RoverServer():
 
     def clientHandler(self,conn):
         debug("Handler thread start")
-        info = conn.getpeername()
+        info = conn.getpeername()[0]
         message = ""
         count = 0
         try:
@@ -118,6 +114,8 @@ class RoverServer():
                 marker = buffer.find("\n")
                 if marker >= 0:
                     message += buffer[:marker]
+                    debug("Server receive")
+                    debug(message)
                     self.parse(message)
                     message = ""
                     count = 0
@@ -130,12 +128,12 @@ class RoverServer():
                     raise Exception
                 #debug(th_data.buffer)
         except socket.timeout:
-            debug("Connection timeout: ", info)
+            debug("Connection timeout: " + info)
             conn.close()
         except BlockingIOError:
             debug("Blocking IO error")
         except Exception as e:
-            debug("Disconnesso ", info)
+            debug("Disconnesso " + info)
             traceback.print_exc()
             conn.close()
         debug("Client handler stopped.")

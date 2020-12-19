@@ -4,14 +4,15 @@ import time
 import socket
 import threading
 import traceback
-from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME
+import json
+from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME, PORT
+
 
 class RoverClient(RoverInterface):
     def __init__(self):
         super(RoverClient, self).__init__()
         self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.server_ip = ""
-        self.server_port = 22222
         self.scanth_flag = 0
         self.client_th_flag = 0
         th = threading.Thread(target = self.client, args=())
@@ -22,7 +23,7 @@ class RoverClient(RoverInterface):
         #da implementare la perdita e il reset della connessione
         try:
             ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            ack_socket.bind(("",12346))
+            ack_socket.bind(("", 12346))
             ack_socket.settimeout(1)
             print("ACK SERVER in ascolto")
         except:
@@ -40,7 +41,7 @@ class RoverClient(RoverInterface):
                     if response == b"ack":
                         self.server_ip = addr[0]
                         print("Server trovato: ",self.server_ip)
-                        self.connect(self.server_ip, self.server_port)
+                        self.connect(self.server_ip, PORT)
                 except socket.timeout:
                     pass
                 except:
@@ -67,18 +68,15 @@ class RoverClient(RoverInterface):
                 pass
             #ricevi dati
 
-    def send(self,data):
-        #funzione per inviare dati
-        if self.connected:
-            try:
-                data = json.dumps(data)
-                self.sock.send(data.encode())
-                #invia dati
-                pass
-            except:
-                #connessione caduta?
-                #traceback.print_exc()
-                self.disconnect()
+    def send(self, data):
+        self.ensureConnection()
+        try:
+            data = json.dumps(data)
+            self.sock.send((data + "\n").encode())
+        except:
+            print("Send error")
+            traceback.print_exc()
+            self.disconnect()
 
     def stopscan(self):
         print("Stopping thread...")
@@ -90,7 +88,7 @@ class RoverClient(RoverInterface):
     
     def client(self):
         try:
-            while self.is_connected:
+            while self.connected:
                 data = self.sock.recv(1024)
                 if data != b"":
                     print(data)
@@ -122,24 +120,23 @@ class RoverClient(RoverInterface):
 
     def move(self, speed):
         super(RoverClient, self).move(speed)
-        self.send("{'move':"+str(speed)+"}\n")
-        # Invia comando muovi
+        self.send({"move": speed})
 
     def moveRotate(self, speed, degPerMin):
         super(RoverClient, self).moveRotate(speed, degPerMin)
-        # Invia comando muovi/ruota
+        self.send({"moveRotate": [speed, degPerMin]})
 
     def rotate(self, angle):
         super(RoverClient, self).rotate(angle)
-        # Invia comando ruota
+        self.send({"rotate": angle})
 
     def stop(self):
         super(RoverClient, self).stop()
-        # Invia comando stop
+        self.send({"stop": True})
 
     def setMLEnabled(self, val):
         super(RoverClient, self).setMLEnabled(val)
-        # Invia comando setML
+        self.send({"setMLEnabled": val})
 
 # Debug
 if __name__ == "__main__":

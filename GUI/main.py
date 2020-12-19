@@ -4,7 +4,7 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir) 
 from PyQt5 import QtWidgets, QtGui, uic
 from PyQt5.QtWidgets import QMessageBox
-from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME
+from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME, PORT
 from roverclient import RoverClient
 
 
@@ -39,8 +39,7 @@ class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
                 QMessageBox.warning(self, "Errore", "Nessun IP inserito!")
             else:
                 # spezza IP e porta
-                port = 12345
-                if self.roverInterface.connect(ip, port):
+                if self.roverInterface.connect(ip, PORT):
                     # Successo, abilita componenti
                     pass
                 else:
