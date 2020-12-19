@@ -110,25 +110,24 @@ class Server(Parser):
     def client_handler(self,conn):
         print("Handler thread start")
         info = conn.getpeername()
-        th_data = threading.local()
         conn.setblocking(0)
         message = ""
         count = 0
         while self.th_flag:
             try:
-                th_data.buffer = conn.recv(1024).decode()
-                marker = th_data.buffer.find("\n")
+                buffer = conn.recv(1024).decode()
+                marker = buffer.find("\n")
                 if(marker >= 0):
-                    message += th_data.buffer[:marker]
+                    message += buffer[:marker]
                     self.elabora(message)
                     message = ""
                     count = 0
                 else:
                     count += 1
-                    if(count > 1000):
+                    if count > 1000:
                         raise socket.timeout
-                    message += th_data.buffer
-                if(th_data.buffer == b""):
+                    message += buffer
+                if buffer == b"":
                     raise Exception
                 #print(th_data.buffer)
             except socket.timeout:

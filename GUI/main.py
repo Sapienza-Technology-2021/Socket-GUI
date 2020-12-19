@@ -3,6 +3,7 @@ sys.path.insert(1, '../')
 from PyQt5 import QtWidgets, QtGui, uic
 from PyQt5.QtWidgets import QMessageBox
 from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME
+import roverclient
 
 
 class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
@@ -35,7 +36,9 @@ class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
             if ip == "":
                 QMessageBox.warning(self, "Errore", "Nessun IP inserito!")
             else:
-                if self.roverInterface.connect(ip):
+                # spezza IP e porta
+                port = 0
+                if self.roverInterface.connect(ip, port):
                     # Successo, abilita componenti
                     pass
                 else:
@@ -112,8 +115,9 @@ class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
 # Main
 if __name__ == "__main__":
     # nuovo thread socket... avvia socket
-    roverInterface = RoverInterface()
+    roverInterface = RoverClient()
     app = QtWidgets.QApplication([])
     gui = RoverUi(roverInterface)
+    roverInterface.setControllerInterface(gui)
     gui.show()
     sys.exit(app.exec_())

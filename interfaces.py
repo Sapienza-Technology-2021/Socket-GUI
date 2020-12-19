@@ -16,15 +16,19 @@ class RoverInvalidOperation(Exception):
 class RoverInterface:
     def __init__(self):
         self.connected = False
+        self.ci = None
+
+    def setControllerInterface(self, controllerInterface):
+        self.ci = controllerInterface
 
     def ensureConnection(self):
         if self.connected is False:
             raise RoverNotConnectedError
 
-    def connect(self, ip):
+    def connect(self, ip, port):
         if self.connected is True:
             raise RoverInvalidOperation
-        debug("Connecting to rover @" + ip + "...")
+        debug("Connecting to rover @" + ip + ":" + str(port) + "...")
         self.connected = True
         return True
 
