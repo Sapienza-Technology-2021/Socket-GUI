@@ -1,3 +1,6 @@
+import threading
+
+
 APP_NAME = "Tech Team Rover"
 DEBUG = True
 
@@ -88,3 +91,12 @@ class ControllerInterface:
 
     def setMLEnabled(self, val):
         debug("Controller update Machine Learning enabled")
+
+def InterruptableEvent():
+    e = threading.Event()
+    def patched_wait():
+        while not e.is_set():
+            e._wait(3)
+    e._wait = e.wait
+    e.wait = patched_wait
+    return e

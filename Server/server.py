@@ -1,3 +1,8 @@
+import os, sys, inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir) 
+from interfaces import debug, InterruptableEvent
 from threading import Event
 import traceback
 import socket
@@ -6,54 +11,10 @@ import threading
 import sys
 import json
 
-class Parser:
-    def __init__(self):
-        self.comandi = {"comando":self.elabora}
-        pass
-    def elabora(self,data):
-        lb = data.count("{")
-        rb = data.count("}")
-        if(lb != rb or lb == 0 or data[0]!="{" or data[len(data)-1]!="}"):
-            print("Messaggio corrotto")
-            return
-        count = 0
-        for i in range(len(data)):
-            if(data[i] == "{"):
-                count += 1
-            elif(data[i] == "}"):
-                count -= 1
-            if(count == 0 and ((i+1) != len(data)) and i != 0):
-                print("Messaggio corrotto ",i)
-                return
-        self.parse(data)
 
-    def parse(self,dict):
-        try:
-            loaded = json.loads(dict)
-            print(loaded)
-            self.load_data(loaded)
-        except json.JSONDecodeError:
-            print("Dizionario corrotto")
-        except Exception as e:
-            print("Codice errore: ", e.args[0])
+PORT = 12345
 
-    def load_data(self,data):
-        try:
-            command = data["comando"]
-            # if-elif per ogni chiave
-            if command == "update":
-                print("Mi sto aggiornando") # eseguire funzione relativa al comando
-            elif command == "move":
-                print("Mi sto muovendo")
-            else:
-                if command == "":
-                    print("Campo comando vuoto")
-                else:
-                    print("Comando non trovato: ", command)
-        except Exception:
-            traceback.print_exc()
-
-class Server(Parser): 
+class RoverServer(): 
     def __init__(self, port):
         super().__init__()
         self.ip = ""
@@ -63,62 +24,101 @@ class Server(Parser):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.th_flag = True
-        th_server = threading.Thread(target = self.inizializza, args = ())
+        th_server = threading.Thread(target=self.serverInit, args=(), daemon=True)
         th_server.start()
         self.ack_th_flag = True
-        ack_th = threading.Thread(target = self.ack_server, args = ())
+        ack_th = threading.Thread(target=self.ackServer, args=(), daemon=True)
         ack_th.start()
 
-    def inizializza(self):
-        print("Server init...")
+    def serverInit(self):
+        debug("Server init...")
         try:
             self.socket.bind((self.ip, self.port))
-            #self.socket.setblocking(0)
             self.socket.listen()
         except Exception as e:
-            print("Init error!")
+            debug("Init error!")
             traceback.print_exc()
             time.sleep(5)
             if self.th_flag is True:
-                print("Init retry...")
-                self.inizializza()
-        print("Server in ascolto...")
-        while self.th_flag:
-            try:
+                debug("Init retry...")
+                self.serverInit()
+        debug("Server in ascolto...")
+        try:
+            while self.th_flag:
                 conn, addr = self.socket.accept()
-                print("Client connesso. Indirizzo: ",addr)
+                debug("Client connesso. Indirizzo: ",addr)
                 if len(self.conns) <= 16:
-                    x = threading.Thread(target = self.client_handler, args = ([conn]))
+                    x = threading.Thread(target=self.clientHandler, args=([conn]), daemon=True)
                     x.start()
                     self.conns[conn] = x
-                    print("Numero threads: ",len(self.conns))
+                    debug("Numero threads: ",len(self.conns))
                 else:
-                    print("Numero di threads massimo raggiunto!")
+                    debug("Numero di threads massimo raggiunto!")
                     conn.close()
-            except BlockingIOError:
-                print("Blocking IO error")
-            except Exception as e:
-                print("Init error!")
-                traceback.print_exc()
-            for i in list(self.conns):
-                if (not self.conns[i].is_alive()):
-                    del self.conns[i]
-                    print("Numero connessioni: ", len(self.conns))
-        print("Closing server...")
+                for i in list(self.conns):
+                    if (not self.conns[i].is_alive()):
+                        del self.conns[i]
+                        debug("Numero connessioni: ", len(self.conns))
+        except BlockingIOError:
+            debug("Blocking IO error")
+        except Exception as e:
+            debug("Init error!")
+            traceback.print_exc()
+        debug("Closing server...")
 
-    def client_handler(self,conn):
-        print("Handler thread start")
+    def disconnect(self):
+        debug("Stopping server...")
+        self.th_flag = False
+        self.ack_th_flag = False
+        self.socket.close()
+
+    def parse(self, data):
+        lb = data.count("{")
+        rb = data.count("}")
+        if lb != rb or lb == 0 or data[0] != "{" or data[len(data) - 1] != "}":
+            debug("Messaggio corrotto")
+            return
+        count = 0
+        for i in range(len(data)):
+            if data[i] == "{":
+                count += 1
+            elif data[i] == "}":
+                count -= 1
+            if count == 0 and (i + 1) != len(data) and i != 0:
+                debug("Messaggio corrotto ",i)
+                return
+        try:
+            loaded = json.loads(dict)
+            debug("Loaded JSON:")
+            debug(loaded)
+            if "move" in loaded:
+                debug("Move " + loaded["move"])
+            if "moveRotate" in loaded:
+                debug("MoveRotate " + loaded["moveRotate"][0] + " " + loaded["moveRotate"][1])
+            if "rotate" in loaded:
+                debug("Rotate " + loaded["rotate"])
+            if "stop" in loaded:
+                debug("Stop " + loaded["stop"])
+            if "setMLEnabled" in loaded:
+                debug("Set ML " + loaded["setMLEnabled"])
+        except json.JSONDecodeError:
+            debug("Dizionario corrotto!")
+            traceback.print_exc()
+        except Exception as e:
+            traceback.print_exc()
+
+    def clientHandler(self,conn):
+        debug("Handler thread start")
         info = conn.getpeername()
-        #conn.setblocking(0)
         message = ""
         count = 0
         try:
             while self.th_flag:
                 buffer = conn.recv(1024).decode()
                 marker = buffer.find("\n")
-                if(marker >= 0):
+                if marker >= 0:
                     message += buffer[:marker]
-                    self.elabora(message)
+                    self.parse(message)
                     message = ""
                     count = 0
                 else:
@@ -128,66 +128,60 @@ class Server(Parser):
                     message += buffer
                 if buffer == b"":
                     raise Exception
-                #print(th_data.buffer)
+                #debug(th_data.buffer)
         except socket.timeout:
-            print("Connection timeout: ", info)
+            debug("Connection timeout: ", info)
             conn.close()
         except BlockingIOError:
-            print("Blocking IO error")
+            debug("Blocking IO error")
         except Exception as e:
-            print("Disconnesso ", info)
-            conn.close()
+            debug("Disconnesso ", info)
             traceback.print_exc()
-        print("Client handler stopped.")
+            conn.close()
+        debug("Client handler stopped.")
 
-    def ack_server(self):
+    def ackServer(self):
         try:
             ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             ack_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            ack_socket.settimeout(1.5)
+            #ack_socket.settimeout(1.5)
             ack_socket.bind(("", 12345))
-            print("ACK server in ascolto")
+            debug("ACK server in ascolto")
         except Exception as e:
-            print("Errore di inizializzazione ACK server")
+            debug("Errore di inizializzazione ACK server")
             traceback.print_exc()
             time.sleep(5)
             if self.ack_th_flag is True:
-                print("ACK init retry...")
+                debug("ACK init retry...")
                 self.ack_server()
-        while self.ack_th_flag:
-            try:
+        try:
+            while self.ack_th_flag:
                 response, addr = ack_socket.recvfrom(1024)
-                if(response == b"discover"):
+                if response == b"discover":
                     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     s.connect((addr[0], 12346))
                     s.send(b"ack")
                     s.close()
-            except socket.timeout:
-                print("ACK timeout.")
-            except Exception as e:
-                print("Errore riscontrato in ACK SERVER")
-                traceback.print_exc()
-        print("Quitting ACK SERVER...")
-
-    def disconnetti(self):
-        print("Stopping server...")
-        self.th_flag = False
-        self.ack_th_flag = False
-        self.socket.close()
+        except socket.timeout:
+            debug("ACK timeout.")
+        except Exception as e:
+            debug("Errore riscontrato in ACK server")
+            traceback.print_exc()
+        debug("Quitting ACK server...")
 
 if __name__ == "__main__":
     server = None
-    event = Event()
+    event = InterruptableEvent()
     try:
-        server = Server(12345)
+        server = RoverServer(PORT)
         event.wait()
     except KeyboardInterrupt:
-        event.clear()
+        print("KeyboardInterrupt")
         if server is not None:
-            server.disconnetti()
+            server.disconnect()
         exit(0)
     except Exception as e:
         traceback.print_exc()
         if server is not None:
-            server.disconnetti()
+            server.disconnect()
         exit(1)
