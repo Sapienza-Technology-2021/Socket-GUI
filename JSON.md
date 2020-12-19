@@ -20,7 +20,7 @@
   - _Avvia modalità automatica machine learning_
   - `val`: boolean, attivo o no
 
-# Client > rover
+## Client > rover
 
 - `move: speed`
   - _Movimento avanti continuo fino a stop_

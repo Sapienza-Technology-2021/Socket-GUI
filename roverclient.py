@@ -14,7 +14,8 @@ class RoverClient(RoverInterface):
         self.server_port = 22222
         self.scanth_flag = 0
         self.client_th_flag = 0
-        self.client_th()
+        th = threading.Thread(target = self.client, args=())
+        th.start()
         #self.scan_th()
 
     def scan(self):
@@ -83,24 +84,17 @@ class RoverClient(RoverInterface):
     def scan_th(self):
         th = threading.Thread(target = self.scan, args=())
         th.start()
-
-   def client_th(self):
-        th = threading.Thread(target = self.client, args=())
-        th.start()
     
     def client(self):
-        while True:
-            if(self.is_connected):
-                try:
-                    data = self.sock.recv(1024)
-                    if(data != b""):
-                        print(data)
-                except:
+        try:
+            while self.is_connected:
+                data = self.sock.recv(1024)
+                if data != b"":
+                    print(data)
+                else:
                     self.disconnect()
-
-            if(self.client_th_flag):
-                return
-            #parser
+        except:
+            self.disconnect()
 
     def manual_scan(self):
         #itera tutta la subnet sulla porta desiderata
