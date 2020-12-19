@@ -4,6 +4,7 @@ import time
 import socket
 import threading
 import traceback
+from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME
 
 class RoverClient(RoverInterface):
     def __init__(self):
@@ -90,11 +91,13 @@ class RoverClient(RoverInterface):
         try:
             self.sock.connect((ip, port))
             self.sock.send(b"first data")
-            print("Connesso al server: ",ip)
+            print("Connesso al server: ", ip)
+            self.connected = True
         except:
             traceback.print_exc()
             print("Errore riscontrato in fase di connessione")
-            self.connected = 0
+            self.connected = False
+        return self.connected
 
     def disconnect(self):
         super(RoverClient, self).disconnect()

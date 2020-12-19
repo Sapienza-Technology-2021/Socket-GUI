@@ -1,16 +1,18 @@
-import sys
-sys.path.insert(1, '../')
+import os, sys, inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir) 
 from PyQt5 import QtWidgets, QtGui, uic
 from PyQt5.QtWidgets import QMessageBox
 from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME
-import roverclient
+from roverclient import RoverClient
 
 
 class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
     def __init__(self, roverInt):
         super(RoverUi, self).__init__()
         self.roverInterface = roverInt
-        uic.loadUi('form.ui', self)
+        uic.loadUi('GUI/form.ui', self)
         self.setWindowIcon(QtGui.QIcon('res/icon.png'))
         self.setWindowTitle(APP_NAME)
         self.connectButton.clicked.connect(self.connectBtnListener)
@@ -37,7 +39,7 @@ class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
                 QMessageBox.warning(self, "Errore", "Nessun IP inserito!")
             else:
                 # spezza IP e porta
-                port = 0
+                port = 12345
                 if self.roverInterface.connect(ip, port):
                     # Successo, abilita componenti
                     pass

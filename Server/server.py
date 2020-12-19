@@ -63,7 +63,6 @@ class Server(Parser):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.th_flag = True
-        self.ack_server_th()
         th_server = threading.Thread(target = self.inizializza, args = ())
         th_server.start()
         self.ack_th_flag = True
@@ -74,7 +73,7 @@ class Server(Parser):
         print("Server init...")
         try:
             self.socket.bind((self.ip, self.port))
-            self.socket.setblocking(0)
+            #self.socket.setblocking(0)
             self.socket.listen()
         except Exception as e:
             print("Init error!")
@@ -110,11 +109,11 @@ class Server(Parser):
     def client_handler(self,conn):
         print("Handler thread start")
         info = conn.getpeername()
-        conn.setblocking(0)
+        #conn.setblocking(0)
         message = ""
         count = 0
-        while self.th_flag:
-            try:
+        try:
+            while self.th_flag:
                 buffer = conn.recv(1024).decode()
                 marker = buffer.find("\n")
                 if(marker >= 0):
@@ -130,15 +129,15 @@ class Server(Parser):
                 if buffer == b"":
                     raise Exception
                 #print(th_data.buffer)
-            except socket.timeout:
-                print("Connection timeout: ", info)
-                conn.close()
-            except BlockingIOError:
-                print("Blocking IO error")
-            except Exception as e:
-                print("Disconnesso ", info)
-                conn.close()
-                traceback.print_exc()
+        except socket.timeout:
+            print("Connection timeout: ", info)
+            conn.close()
+        except BlockingIOError:
+            print("Blocking IO error")
+        except Exception as e:
+            print("Disconnesso ", info)
+            conn.close()
+            traceback.print_exc()
         print("Client handler stopped.")
 
     def ack_server(self):
@@ -177,13 +176,18 @@ class Server(Parser):
         self.socket.close()
 
 if __name__ == "__main__":
+    server = None
+    event = Event()
     try:
-        server = Server()
-        Event().wait()
+        server = Server(12345)
+        event.wait()
     except KeyboardInterrupt:
-        server.disconnetti()
+        event.clear()
+        if server is not None:
+            server.disconnetti()
         exit(0)
     except Exception as e:
         traceback.print_exc()
-        server.disconnetti()
+        if server is not None:
+            server.disconnetti()
         exit(1)

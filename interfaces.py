@@ -29,8 +29,7 @@ class RoverInterface:
         if self.connected is True:
             raise RoverInvalidOperation
         debug("Connecting to rover @" + ip + ":" + str(port) + "...")
-        self.connected = True
-        return True
+        return False
 
     def disconnect(self):
         if self.connected is False:
