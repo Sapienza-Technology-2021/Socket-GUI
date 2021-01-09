@@ -46,9 +46,10 @@ class RoverServer():
                 conn, addr = self.socket.accept()
                 debug("Client connesso. Indirizzo: " + str(addr[0]))
                 if len(self.conns) <= 16:
-                    x = threading.Thread(target=self.clientHandler, args=([conn]), daemon=True)
-                    x.start()
-                    self.conns[conn] = x
+                    thread = threading.Thread(target=self.clientHandler, args=([conn]), daemon=True)
+                    thread.start()
+                    self.conns[conn] = thread
+                    conn.send(b"<PING>\n")
                     debug("Numero threads: " + str(len(self.conns)))
                 else:
                     debug("Numero di threads massimo raggiunto!")
@@ -57,6 +58,8 @@ class RoverServer():
                     if (not self.conns[i].is_alive()):
                         del self.conns[i]
                         debug("Numero connessioni: " + str(len(self.conns)))
+        except (ConnectionResetError, ConnectionAbortedError, socket.timeout):
+            debug("Connection reset")
         except BlockingIOError:
             debug("Blocking IO error")
         except Exception as e:
@@ -71,6 +74,9 @@ class RoverServer():
         self.socket.close()
 
     def parse(self, data):
+        if data.startswith("<") and data.endswith(">"):
+            print("Received test message", data)
+            return
         lb = data.count("{")
         rb = data.count("}")
         if lb != rb or lb == 0 or data[0] != "{" or data[len(data) - 1] != "}":
@@ -103,7 +109,7 @@ class RoverServer():
         except Exception as e:
             traceback.print_exc()
 
-    def clientHandler(self,conn):
+    def clientHandler(self, conn):
         debug("Handler thread start")
         info = conn.getpeername()[0]
         message = ""
@@ -127,8 +133,8 @@ class RoverServer():
                 if buffer == b"":
                     raise Exception
                 #debug(th_data.buffer)
-        except socket.timeout:
-            debug("Connection timeout: " + info)
+        except (ConnectionResetError, ConnectionAbortedError, socket.timeout):
+            debug("Connection reset: " + info)
             conn.close()
         except BlockingIOError:
             debug("Blocking IO error")
@@ -137,6 +143,17 @@ class RoverServer():
             traceback.print_exc()
             conn.close()
         debug("Client handler stopped.")
+
+    def send(self, data):
+        self.ensureConnection()
+        for conn in self.conns:
+            try:
+                data = json.dumps(data)
+                self.conn.send((data + "\n").encode())
+            except:
+                print("Send error")
+                traceback.print_exc()
+                self.disconnect()
 
     def ackServer(self):
         try:
@@ -155,7 +172,7 @@ class RoverServer():
         try:
             while self.ack_th_flag:
                 response, addr = ack_socket.recvfrom(1024)
-                if response == b"discover":
+                if response == b"<ROVER_DISCOVER>":
                     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     s.connect((addr[0], 12346))
                     s.send(b"ack")

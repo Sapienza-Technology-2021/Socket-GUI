@@ -1,11 +1,10 @@
-#Client
 import sys
 import time
 import socket
 import threading
 import traceback
 import json
-from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME, PORT
+from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME, PORT, InterruptableEvent
 
 
 class RoverClient(RoverInterface):
@@ -13,60 +12,41 @@ class RoverClient(RoverInterface):
         super(RoverClient, self).__init__()
         self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.server_ip = ""
-        self.scanth_flag = 0
-        self.client_th_flag = 0
-        th = threading.Thread(target = self.client, args=())
-        th.start()
-        #self.scan_th()
+        self.scan_run = False
+        self.discover_socket = None
+        self.discover_client_sock = None
+        #threading.Thread(target = self.scan, args=(), daemon=True).start()
 
     def scan(self):
         #da implementare la perdita e il reset della connessione
         try:
-            ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            ack_socket.bind(("", 12346))
-            ack_socket.settimeout(1)
+            self.discover_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.discover_socket.bind(("", 12346))
+            self.discover_socket.settimeout(1)
             print("ACK SERVER in ascolto")
         except:
             traceback.print_exc()
             print("Errore di inizializzazione acknowledgment server")
             time.sleep(0.2)
             self.scan()
-        while True:
-            if not self.connected:
-                try:
-                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-                    s.sendto(b"discover", ("<broadcast>",12345))
-                    response, addr = ack_socket.recvfrom(1024)
-                    if response == b"ack":
-                        self.server_ip = addr[0]
-                        print("Server trovato: ",self.server_ip)
-                        self.connect(self.server_ip, PORT)
-                except socket.timeout:
-                    pass
-                except:
-                    traceback.print_exc()
-                    print("Errore riscontrato nell'invio di pacchetti broadcast")
-                    print("Unexpected error:", sys.exc_info()[0])
-                    time.sleep(1)
-                    
-            else:
-                #possibile implementare qui un check a cadenza regolare per verificare la presenza del server
-                #oltre al riconoscimento tramite eccezioni sui metodi recv e send
-                time.sleep(1)
-
-            if(self.scanth_flag==1):
-                self.scanth_flag = 0
-                print("Quitting...")
-                exit(0)
-    
-    def recv(self):
-        if self.connected:
+        while self.scan_run and not self.connected:
             try:
+                self.discover_client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.discover_client_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                self.discover_client_sock.sendto(b"<ROVER_DISCOVER>", ("<broadcast>", 12345))
+                response, addr = self.discover_socket.recvfrom(1024)
+                if response == b"ack":
+                    self.server_ip = addr[0]
+                    print("Server trovato: ", self.server_ip)
+                    self.connect(self.server_ip, PORT)
+            except socket.timeout:
                 pass
             except:
-                pass
-            #ricevi dati
+                traceback.print_exc()
+                print("Errore riscontrato nell'invio di pacchetti broadcast")
+                print("Unexpected error:", sys.exc_info()[0])
+                time.sleep(1)
+        print("Scan stopped")
 
     def send(self, data):
         self.ensureConnection()
@@ -78,45 +58,68 @@ class RoverClient(RoverInterface):
             traceback.print_exc()
             self.disconnect()
 
-    def stopscan(self):
+    def stopScan(self):
         print("Stopping thread...")
-        self.scanth_flag = 1
-
-    def scan_th(self):
-        th = threading.Thread(target = self.scan, args=())
-        th.start()
+        self.scan_run = False
+        if self.discover_socket is not None:
+            self.discover_socket.close()
+        if self.discover_client_sock is not None:
+            self.discover_client_sock.close()
     
-    def client(self):
+    def serverHandler(self):
+        debug("Handler thread start")
+        message = ""
+        count = 0
         try:
             while self.connected:
-                data = self.sock.recv(1024)
-                if data != b"":
-                    print(data)
+                buffer = self.sock.recv(1024).decode()
+                marker = buffer.find("\n")
+                if marker >= 0:
+                    message += buffer[:marker]
+                    debug("Client receive")
+                    debug(message)
+                    #self.parse(message)
+                    message = ""
+                    count = 0
                 else:
-                    self.disconnect()
-        except:
+                    count += 1
+                    if count > 1000:
+                        raise socket.timeout
+                    message += buffer
+                if buffer == b"":
+                    raise Exception
+        except (ConnectionResetError, ConnectionAbortedError, socket.timeout):
+            debug("Connection reset")
             self.disconnect()
-
-    def manual_scan(self):
-        #itera tutta la subnet sulla porta desiderata
-        pass
+        except BlockingIOError:
+            debug("Blocking IO error")
+        except Exception as e:
+            debug("Disconnesso")
+            traceback.print_exc()
+            self.disconnect()
+        debug("Server handler stopped.")
 
     def connect(self, ip, port):
         super(RoverClient, self).connect(ip, port)
         try:
             self.sock.connect((ip, port))
-            self.sock.send(b"first data")
             print("Connesso al server: ", ip)
             self.connected = True
+            threading.Thread(target = self.serverHandler, args=()).start()
+            self.sock.send(b"<PING>\n")
+            return True
         except:
             traceback.print_exc()
             print("Errore riscontrato in fase di connessione")
             self.connected = False
-        return self.connected
+            return False
 
     def disconnect(self):
         super(RoverClient, self).disconnect()
-        # Disconnetti socket
+        self.connected = False
+        self.stopScan()
+        if self.sock is not None:
+            self.sock.close()
 
     def move(self, speed):
         super(RoverClient, self).move(speed)
@@ -140,16 +143,15 @@ class RoverClient(RoverInterface):
 
 # Debug
 if __name__ == "__main__":
-    class Qt:
-        def __init__(self):
-            connection = RoverClient(self)
-            while True:
-                try:
-                    time.sleep(1)
-                except KeyboardInterrupt:
-                    connection.stopscan()
-                    exit(0)
-        def ext(self):
-            print("BUM!")
-
-    app = Qt()
+    client = RoverClient()
+    event = InterruptableEvent()
+    try:
+        client.connect("localhost", PORT)
+        event.wait()
+    except KeyboardInterrupt:
+        client.disconnect()
+        exit(0)
+    except Exception as e:
+        traceback.print_exc()
+        client.disconnect()
+        exit(1)

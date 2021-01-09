@@ -36,8 +36,6 @@ class RoverInterface:
         return False
 
     def disconnect(self):
-        if self.connected is False:
-            raise RoverInvalidOperation
         debug("Disconnecting from rover...")
         self.connected = False
 
