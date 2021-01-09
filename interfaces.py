@@ -1,4 +1,5 @@
 import threading
+import json
 
 
 APP_NAME = "Tech Team Rover"
@@ -9,6 +10,26 @@ def debug(msg):
     global DEBUG
     if DEBUG is True:
         print(msg)
+
+def checkLoadJson(data):
+    if data.startswith("<") and data.endswith(">"):
+        print("Received test message", data)
+        return None
+    lb = data.count("{")
+    rb = data.count("}")
+    if lb != rb or lb == 0 or data[0] != "{" or data[len(data) - 1] != "}":
+        debug("Corrupted Json")
+        return None
+    count = 0
+    for i in range(len(data)):
+        if data[i] == "{":
+            count += 1
+        elif data[i] == "}":
+            count -= 1
+        if count == 0 and (i + 1) != len(data) and i != 0:
+            debug("Corrupted Json")
+            return None
+    return json.loads(data)
 
 class RoverNotConnectedError(Exception):
     pass

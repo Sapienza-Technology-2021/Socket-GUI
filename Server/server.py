@@ -2,7 +2,7 @@ import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir) 
-from interfaces import debug, InterruptableEvent, PORT
+from interfaces import debug, InterruptableEvent, PORT, checkLoadJson
 from threading import Event
 import traceback
 import socket
@@ -55,7 +55,7 @@ class RoverServer():
                     debug("Numero di threads massimo raggiunto!")
                     conn.close()
                 for i in list(self.conns):
-                    if (not self.conns[i].is_alive()):
+                    if not self.conns[i].is_alive():
                         del self.conns[i]
                         debug("Numero connessioni: " + str(len(self.conns)))
         except (ConnectionResetError, ConnectionAbortedError, socket.timeout):
@@ -74,25 +74,10 @@ class RoverServer():
         self.socket.close()
 
     def parse(self, data):
-        if data.startswith("<") and data.endswith(">"):
-            print("Received test message", data)
-            return
-        lb = data.count("{")
-        rb = data.count("}")
-        if lb != rb or lb == 0 or data[0] != "{" or data[len(data) - 1] != "}":
-            debug("Messaggio corrotto")
-            return
-        count = 0
-        for i in range(len(data)):
-            if data[i] == "{":
-                count += 1
-            elif data[i] == "}":
-                count -= 1
-            if count == 0 and (i + 1) != len(data) and i != 0:
-                debug("Messaggio corrotto " + str(i))
-                return
         try:
-            loaded = json.loads(data)
+            loaded = checkLoadJson(data)
+            if loaded is None:
+                return
             if "move" in loaded:
                 debug("Move " + str(loaded["move"]))
             if "moveRotate" in loaded:
@@ -104,7 +89,7 @@ class RoverServer():
             if "setMLEnabled" in loaded:
                 debug("Set ML " + str(loaded["setMLEnabled"]))
         except json.JSONDecodeError:
-            debug("Dizionario corrotto!")
+            debug("Corrupted Json dictionary!")
             traceback.print_exc()
         except Exception as e:
             traceback.print_exc()
@@ -145,11 +130,10 @@ class RoverServer():
         debug("Client handler stopped.")
 
     def send(self, data):
-        self.ensureConnection()
-        for conn in self.conns:
+        for conn in self.conns.keys():
             try:
                 data = json.dumps(data)
-                self.conn.send((data + "\n").encode())
+                conn.send((data + "\n").encode())
             except:
                 print("Send error")
                 traceback.print_exc()
@@ -184,12 +168,17 @@ class RoverServer():
             traceback.print_exc()
         debug("Quitting ACK server...")
 
+    def updateBatt(self):
+        self.send({"updateBatt": 100})
+
 if __name__ == "__main__":
     server = None
     event = InterruptableEvent()
     try:
         server = RoverServer(PORT)
-        event.wait()
+        while True:
+            server.updateBatt()
+            time.sleep(5)
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         if server is not None:

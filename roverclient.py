@@ -4,7 +4,7 @@ import socket
 import threading
 import traceback
 import json
-from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME, PORT, InterruptableEvent
+from interfaces import checkLoadJson, ControllerInterface, RoverInterface, debug, APP_NAME, PORT, InterruptableEvent
 
 
 class RoverClient(RoverInterface):
@@ -65,6 +65,33 @@ class RoverClient(RoverInterface):
             self.discover_socket.close()
         if self.discover_client_sock is not None:
             self.discover_client_sock.close()
+
+    def parse(self, data):
+        try:
+            loaded = checkLoadJson(data)
+            if loaded is None:
+                return
+            if "updateAccel" in loaded:
+                debug("updateAccel " + str(loaded["updateAccel"]))
+            if "updateGyro" in loaded:
+                debug("updateGyro " + str(loaded["updateGyro"]))
+            if "updateMagn" in loaded:
+                debug("updateMagn " + str(loaded["updateMagn"]))
+            if "updateIrDistance" in loaded:
+                debug("updateIrDistance " + str(loaded["updateIrDistance"]))
+            if "updateBatt" in loaded:
+                debug("updateBatt " + str(loaded["updateBatt"]))
+            if "updateCpuTemp" in loaded:
+                debug("updateCpuTemp " + str(loaded["updateCpuTemp"]))
+            if "updateRPMFeedback" in loaded:
+                debug("updateRPMFeedback " + str(loaded["updateRPMFeedback"]))
+            if "setMLEnabled" in loaded:
+                debug("Set ML " + str(loaded["setMLEnabled"]))
+        except json.JSONDecodeError:
+            debug("Corrupted Json dictionary!")
+            traceback.print_exc()
+        except Exception as e:
+            traceback.print_exc()
     
     def serverHandler(self):
         debug("Handler thread start")
@@ -78,7 +105,7 @@ class RoverClient(RoverInterface):
                     message += buffer[:marker]
                     debug("Client receive")
                     debug(message)
-                    #self.parse(message)
+                    self.parse(message)
                     message = ""
                     count = 0
                 else:
