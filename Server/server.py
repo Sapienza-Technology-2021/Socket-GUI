@@ -123,10 +123,10 @@ class RoverServer():
             conn.close()
         debug("Client handler stopped.")
 
-    def send(self, data):
+    def send(self, rawData):
         for conn in self.conns.keys():
             try:
-                data = json.dumps(data)
+                data = json.dumps(rawData)
                 conn.send((data + "\n").encode())
             except:
                 print("Send error")
