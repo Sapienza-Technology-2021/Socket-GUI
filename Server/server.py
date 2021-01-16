@@ -13,6 +13,24 @@ import json
 
 
 class RoverServer():
+    class Connection:
+        def __init__(self,conn):
+            self.conn = conn
+            self.isAlive = True
+        def send(self,x):
+            if self.isAlive:
+                self.conn.send(x)
+        def close(self):
+            if self.isAlive:
+                self.isAlive = False
+                print("Chiuso")
+                self.conn.close()
+                self.conn = None
+        def getpeername(self):
+            return self.conn.getpeername()
+        def recv(self,len):
+            if self.isAlive:
+                return self.conn.recv(len)
     def __init__(self, port):
         super().__init__()
         self.ip = ""
@@ -43,7 +61,8 @@ class RoverServer():
         debug("Server in ascolto...")
         try:
             while self.th_flag:
-                conn, addr = self.socket.accept()
+                sock, addr = self.socket.accept()
+                conn = self.Connection(sock)
                 debug("Client connesso. Indirizzo: " + str(addr[0]))
                 if len(self.conns) <= 16:
                     thread = threading.Thread(target=self.clientHandler, args=([conn]), daemon=True)
@@ -55,7 +74,8 @@ class RoverServer():
                     debug("Numero di threads massimo raggiunto!")
                     conn.close()
                 for i in list(self.conns):
-                    if not self.conns[i].is_alive():
+                    if not i.isAlive:
+                        self.conns[i].join()
                         del self.conns[i]
                         debug("Numero connessioni: " + str(len(self.conns)))
         except (ConnectionResetError, ConnectionAbortedError, socket.timeout):
@@ -82,6 +102,7 @@ class RoverServer():
             for item in commands:
                 if(item in loaded):
                     debug(item + " " + str(loaded[item]))
+
         except json.JSONDecodeError:
             debug("Corrupted Json dictionary!")
             traceback.print_exc()
@@ -165,6 +186,7 @@ class RoverServer():
     def updateBatt(self):
         #quando una connessione si chiude il server non modifica il pool delle connessioni e tenta di inviare su socket già chiusi
         if len(self.conns) > 0:
+            print(len(self.conns))
             self.send({"updateBatt": 100})
 
 if __name__ == "__main__":
