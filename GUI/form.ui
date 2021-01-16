@@ -60,6 +60,9 @@
     </item>
     <item row="0" column="0" colspan="3">
      <widget class="QTabWidget" name="tabWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -68,7 +71,7 @@
        </font>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="connTab">
        <attribute name="title">
@@ -131,7 +134,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Connetti / disconnetti</string>
+           <string>Connetti</string>
           </property>
          </widget>
         </item>
@@ -632,12 +635,18 @@
        </layout>
       </widget>
       <widget class="QWidget" name="moveTab">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <attribute name="title">
         <string>Movimento</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_5">
         <item row="4" column="1">
          <widget class="QPushButton" name="moveDown">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -669,6 +678,9 @@
         </item>
         <item row="3" column="0">
          <widget class="QPushButton" name="rotCCWBtn">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -700,6 +712,9 @@
         </item>
         <item row="1" column="2">
          <widget class="QPushButton" name="moveUpRight">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -731,6 +746,9 @@
         </item>
         <item row="4" column="0">
          <widget class="QPushButton" name="moveDownLeft">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -754,6 +772,9 @@
         </item>
         <item row="1" column="1">
          <widget class="QPushButton" name="moveUp">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -785,6 +806,9 @@
         </item>
         <item row="3" column="2">
          <widget class="QPushButton" name="rotCWBtn">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -816,6 +840,9 @@
         </item>
         <item row="4" column="2">
          <widget class="QPushButton" name="moveDownRight">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -839,6 +866,9 @@
         </item>
         <item row="3" column="1">
          <widget class="QPushButton" name="moveStop">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -870,6 +900,9 @@
         </item>
         <item row="1" column="0">
          <widget class="QPushButton" name="moveUpLeft">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -909,6 +942,9 @@
           </property>
           <item row="1" column="2">
            <widget class="QSlider" name="rotSpeedSlider">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="minimum">
              <number>1</number>
             </property>
@@ -1020,6 +1056,9 @@
           </item>
           <item row="2" column="2">
            <widget class="QSlider" name="degPerClickSlider">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="minimum">
              <number>1</number>
             </property>
@@ -1045,6 +1084,9 @@
           </item>
           <item row="0" column="2">
            <widget class="QSlider" name="speedSlider">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="minimum">
              <number>10</number>
             </property>
@@ -1147,6 +1189,9 @@
         </item>
         <item>
          <widget class="QCheckBox" name="enableMLBox">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="font">
            <font>
             <pointsize>18</pointsize>

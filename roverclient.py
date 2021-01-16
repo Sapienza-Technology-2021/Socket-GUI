@@ -1,24 +1,28 @@
-import sys
-import time
+import json
 import socket
 import threading
+import time
 import traceback
-import json
-from interfaces import checkLoadJson, ControllerInterface, RoverInterface, debug, APP_NAME, PORT, InterruptableEvent
+
+from interfaces import checkLoadJson, debug, PORT, InterruptableEvent
 
 
-class RoverClient(RoverInterface):
+class RoverClient():
     def __init__(self):
-        super(RoverClient, self).__init__()
-        self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.connected = False
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_ip = ""
         self.scan_run = False
         self.discover_socket = None
         self.discover_client_sock = None
-        #threading.Thread(target = self.scan, args=(), daemon=True).start()
+        # threading.Thread(target = self.scan, args=(), daemon=True).start()
+
+    def ensureConnection(self):
+        if self.connected is False:
+            raise RoverNotConnectedError
 
     def scan(self):
-        #da implementare la perdita e il reset della connessione
+        # da implementare la perdita e il reset della connessione
         try:
             self.discover_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.discover_socket.bind(("", 12346))
@@ -44,7 +48,6 @@ class RoverClient(RoverInterface):
             except:
                 traceback.print_exc()
                 print("Errore riscontrato nell'invio di pacchetti broadcast")
-                print("Unexpected error:", sys.exc_info()[0])
                 time.sleep(1)
         print("Scan stopped")
 
@@ -69,18 +72,20 @@ class RoverClient(RoverInterface):
     def parse(self, data):
         try:
             loaded = checkLoadJson(data)
-            commands = ["updateAccel", "updateGyro","updateMagn","updateIrDistance","updateBatt","updateCpuTemp","updateRPMFeedback","setMLEnabled"]
+            commands = ["updateAccel", "updateGyro", "updateMagn", "updateIrDistance", "updateBatt", "updateCpuTemp",
+                        "updateRPMFeedback", "setMLEnabled"]
             if loaded is None:
                 return
             for item in commands:
-                if(item in loaded):
+                if (item in loaded):
                     debug(item + " " + str(loaded[item]))
+                    getattr(self, item)(loaded[item])
         except json.JSONDecodeError:
             debug("Corrupted Json dictionary!")
             traceback.print_exc()
         except Exception as e:
             traceback.print_exc()
-    
+
     def serverHandler(self):
         debug("Handler thread start")
         message = ""
@@ -120,7 +125,7 @@ class RoverClient(RoverInterface):
             self.sock.connect((ip, port))
             print("Connesso al server: ", ip)
             self.connected = True
-            threading.Thread(target = self.serverHandler, args=()).start()
+            threading.Thread(target=self.serverHandler, args=(), daemon=True).start()
             self.sock.send(b"<PING>\n")
             return True
         except:
@@ -132,7 +137,7 @@ class RoverClient(RoverInterface):
     def disconnect(self):
         super(RoverClient, self).disconnect()
         self.connected = False
-        self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.stopScan()
 
     def move(self, speed):
@@ -155,6 +160,7 @@ class RoverClient(RoverInterface):
         super(RoverClient, self).setMLEnabled(val)
         self.send({"setMLEnabled": val})
 
+
 # Debug
 if __name__ == "__main__":
     client = RoverClient()
@@ -165,7 +171,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         client.disconnect()
         exit(0)
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         client.disconnect()
         exit(1)

@@ -1,19 +1,20 @@
-import threading
 import json
-
+import threading
 
 APP_NAME = "Tech Team Rover"
 PORT = 12345
 DEBUG = True
+
 
 def debug(msg):
     global DEBUG
     if DEBUG is True:
         print(msg)
 
+
 def checkLoadJson(data):
     if data.startswith("<") and data.endswith(">"):
-        print("Received test message", data)
+        debug("Received test message: " + data)
         return None
     lb = data.count("{")
     rb = data.count("}")
@@ -31,24 +32,19 @@ def checkLoadJson(data):
             return None
     return json.loads(data)
 
+
 class RoverNotConnectedError(Exception):
     pass
+
 
 class RoverInvalidOperation(Exception):
     pass
 
+
 # To be implemented by the client socket
 class RoverInterface:
-    def __init__(self):
-        self.connected = False
-        self.ci = None
 
-    def setControllerInterface(self, controllerInterface):
-        self.ci = controllerInterface
 
-    def ensureConnection(self):
-        if self.connected is False:
-            raise RoverNotConnectedError
 
     def connect(self, ip, port):
         if self.connected is True:
@@ -83,6 +79,7 @@ class RoverInterface:
         self.ensureConnection()
         debug("Rover ML " + ("enabled" if val is True else "disabled"))
 
+
 # To be implemented by the GUI and the ML classes
 class ControllerInterface:
     def __init__(self):
@@ -112,11 +109,14 @@ class ControllerInterface:
     def setMLEnabled(self, val):
         debug("Controller update Machine Learning enabled")
 
+
 def InterruptableEvent():
     e = threading.Event()
+
     def patched_wait():
         while not e.is_set():
             e._wait(3)
+
     e._wait = e.wait
     e.wait = patched_wait
     return e

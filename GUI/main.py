@@ -1,17 +1,17 @@
-import os, sys, inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir) 
+import inspect
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
 from PyQt5 import QtWidgets, QtGui, uic
 from PyQt5.QtWidgets import QMessageBox
-from interfaces import ControllerInterface, RoverInterface, debug, APP_NAME, PORT
+from interfaces import APP_NAME, PORT
 from roverclient import RoverClient
 
 
-class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
-    def __init__(self, roverInt):
+class RoverUi(QtWidgets.QMainWindow, RoverClient):
+    def __init__(self):
         super(RoverUi, self).__init__()
-        self.roverInterface = roverInt
         uic.loadUi('GUI/form.ui', self)
         self.setWindowIcon(QtGui.QIcon('res/icon.png'))
         self.setWindowTitle(APP_NAME)
@@ -26,6 +26,7 @@ class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
         self.moveDownRight.clicked.connect(self.moveDownRightListener)
         self.moveStop.clicked.connect(self.moveStopListener)
         self.tabWidget.setCurrentIndex(0)
+        self.enableComponents(False)
         self.show()
 
     # Button listeners
@@ -33,17 +34,34 @@ class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
     def connectBtnListener(self):
         if self.roverInterface.isConnected():
             self.roverInterface.disconnect()
+            self.enableComponents(False)
+            self.ipField.setEnabled(True)
+            self.connectButton.setText("Connetti")
         else:
             ip = self.ipField.text()
             if ip == "":
                 QMessageBox.warning(self, "Errore", "Nessun IP inserito!")
             else:
-                # spezza IP e porta
                 if self.roverInterface.connect(ip, PORT):
-                    # Successo, abilita componenti
-                    pass
+                    self.enableComponents(True)
+                    self.ipField.setEnabled(False)
+                    self.connectButton.setText("Disconnetti")
                 else:
                     QMessageBox.warning(self, "Errore", "Connessione fallita!")
+
+    def enableComponents(self, b):
+        self.moveUp.setEnabled(b)
+        self.moveDown.setEnabled(b)
+        self.rotCCWBtn.setEnabled(b)
+        self.rotCWBtn.setEnabled(b)
+        self.moveUpRight.setEnabled(b)
+        self.moveUpLeft.setEnabled(b)
+        self.moveDownLeft.setEnabled(b)
+        self.moveDownRight.setEnabled(b)
+        self.moveStop.setEnabled(b)
+        self.speedSlider.setEnabled(b)
+        self.rotSpeedSlider.setEnabled(b)
+        self.degPerClickSlider.setEnabled(b)
 
     def moveUpListener(self):
         self.roverInterface.move(self.speedSlider.value())
@@ -67,7 +85,7 @@ class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
         self.roverInterface.moveRotate(-self.speedSlider.value(), -self.rotSpeedSlider.value())
 
     def moveDownRightListener(self):
-        self.roverInterface.moveRotate(-self.speedSlider.value(), self.rotSpeedSlider.value())
+        super(blah).moveRotate(-self.speedSlider.value(), self.rotSpeedSlider.value())
 
     def moveStopListener(self):
         self.roverInterface.stop()
@@ -78,7 +96,7 @@ class RoverUi(QtWidgets.QMainWindow, ControllerInterface):
         self.accelXNumber.display("{:.2f}".format(xyz[0]))
         self.accelYNumber.display("{:.2f}".format(xyz[1]))
         self.accelZNumber.display("{:.2f}".format(xyz[2]))
-        
+
     def updateGyro(self, xyz):
         super(RoverUi, self).updateGyro(xyz)
         self.gyroXNumber.display("{:.2f}".format(xyz[0]))
