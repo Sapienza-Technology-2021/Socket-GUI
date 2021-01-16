@@ -12,7 +12,7 @@ import sys
 import json
 
 
-class RoverServer(): 
+class RoverServer():
     def __init__(self, port):
         super().__init__()
         self.ip = ""
@@ -76,18 +76,12 @@ class RoverServer():
     def parse(self, data):
         try:
             loaded = checkLoadJson(data)
+            commands = ["move", "moveRotate", "rotate", "stop", "setMLEnabled"]
             if loaded is None:
                 return
-            if "move" in loaded:
-                debug("Move " + str(loaded["move"]))
-            if "moveRotate" in loaded:
-                debug("MoveRotate " + str(loaded["moveRotate"][0]) + " " + str(loaded["moveRotate"][1]))
-            if "rotate" in loaded:
-                debug("Rotate " + str(loaded["rotate"]))
-            if "stop" in loaded:
-                debug("Stop " + str(loaded["stop"]))
-            if "setMLEnabled" in loaded:
-                debug("Set ML " + str(loaded["setMLEnabled"]))
+            for item in commands:
+                if(item in loaded):
+                    debug(item + " " + str(loaded[item]))
         except json.JSONDecodeError:
             debug("Corrupted Json dictionary!")
             traceback.print_exc()
@@ -137,7 +131,7 @@ class RoverServer():
             except:
                 print("Send error")
                 traceback.print_exc()
-                self.disconnect()
+                conn.close()
 
     def ackServer(self):
         try:
@@ -169,7 +163,9 @@ class RoverServer():
         debug("Quitting ACK server...")
 
     def updateBatt(self):
-        self.send({"updateBatt": 100})
+        #quando una connessione si chiude il server non modifica il pool delle connessioni e tenta di inviare su socket già chiusi
+        if len(self.conns) > 0:
+            self.send({"updateBatt": 100})
 
 if __name__ == "__main__":
     server = None

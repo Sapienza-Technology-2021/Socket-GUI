@@ -69,24 +69,12 @@ class RoverClient(RoverInterface):
     def parse(self, data):
         try:
             loaded = checkLoadJson(data)
+            commands = ["updateAccel", "updateGyro","updateMagn","updateIrDistance","updateBatt","updateCpuTemp","updateRPMFeedback","setMLEnabled"]
             if loaded is None:
                 return
-            if "updateAccel" in loaded:
-                debug("updateAccel " + str(loaded["updateAccel"]))
-            if "updateGyro" in loaded:
-                debug("updateGyro " + str(loaded["updateGyro"]))
-            if "updateMagn" in loaded:
-                debug("updateMagn " + str(loaded["updateMagn"]))
-            if "updateIrDistance" in loaded:
-                debug("updateIrDistance " + str(loaded["updateIrDistance"]))
-            if "updateBatt" in loaded:
-                debug("updateBatt " + str(loaded["updateBatt"]))
-            if "updateCpuTemp" in loaded:
-                debug("updateCpuTemp " + str(loaded["updateCpuTemp"]))
-            if "updateRPMFeedback" in loaded:
-                debug("updateRPMFeedback " + str(loaded["updateRPMFeedback"]))
-            if "setMLEnabled" in loaded:
-                debug("Set ML " + str(loaded["setMLEnabled"]))
+            for item in commands:
+                if(item in loaded):
+                    debug(item + " " + str(loaded[item]))
         except json.JSONDecodeError:
             debug("Corrupted Json dictionary!")
             traceback.print_exc()
@@ -144,9 +132,8 @@ class RoverClient(RoverInterface):
     def disconnect(self):
         super(RoverClient, self).disconnect()
         self.connected = False
+        self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.stopScan()
-        if self.sock is not None:
-            self.sock.close()
 
     def move(self, speed):
         super(RoverClient, self).move(speed)
