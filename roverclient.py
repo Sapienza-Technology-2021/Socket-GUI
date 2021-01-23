@@ -4,10 +4,10 @@ import threading
 import time
 import traceback
 
-from interfaces import checkLoadJson, debug, PORT, InterruptableEvent
+from utils import checkLoadJson, debug, PORT, InterruptableEvent
 
 
-class RoverClient():
+class RoverClient:
     def __init__(self):
         self.connected = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,6 +16,7 @@ class RoverClient():
         self.discover_socket = None
         self.discover_client_sock = None
         self.commands = []
+        self.interface = None
         # threading.Thread(target = self.scan, args=(), daemon=True).start()
 
     def setControllerInterface(self, interface):
@@ -25,11 +26,12 @@ class RoverClient():
         self.commands = cmds
 
     def ensureConnection(self):
-        if self.connected is False:
-            try:
+        if self.connected:
+            return True
+        else:
+            if self.interface is not None:
                 self.interface.onDisconnect()
-            except:
-                pass
+            return False
 
     def scan(self):
         # da implementare la perdita e il reset della connessione
@@ -62,14 +64,14 @@ class RoverClient():
         print("Scan stopped")
 
     def send(self, data):
-        self.ensureConnection()
-        try:
-            data = json.dumps(data)
-            self.sock.send((data + "\n").encode())
-        except:
-            print("Send error")
-            traceback.print_exc()
-            self.disconnect()
+        if self.ensureConnection():
+            try:
+                data = json.dumps(data)
+                self.sock.send((data + "\n").encode())
+            except:
+                print("Send error")
+                traceback.print_exc()
+                self.disconnect()
 
     def stopScan(self):
         print("Stopping thread...")
@@ -85,9 +87,10 @@ class RoverClient():
             if loaded is None:
                 return
             for item in self.commands:
-                if (item in loaded):
+                if item in loaded:
                     debug(item + " " + str(loaded[item]))
-                    getattr(self.interface, item)(loaded[item])
+                    if self.interface is not None:
+                        getattr(self.interface, item)(loaded[item])
         except json.JSONDecodeError:
             debug("Corrupted Json dictionary!")
             traceback.print_exc()
@@ -121,7 +124,7 @@ class RoverClient():
             self.disconnect()
         except BlockingIOError:
             debug("Blocking IO error")
-        except Exception as e:
+        except:
             debug("Disconnesso")
             traceback.print_exc()
             self.disconnect()
@@ -145,33 +148,25 @@ class RoverClient():
         return self.connected
 
     def disconnect(self):
-        #super(RoverClient, self).disconnect()
         self.connected = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.stopScan()
-        try:
+        if self.interface is not None:
             self.interface.onDisconnect()
-        except:
-            pass
 
     def move(self, speed):
-        #super(RoverClient, self).move(speed)
         self.send({"move": speed})
 
     def moveRotate(self, speed, degPerMin):
-        #super(RoverClient, self).moveRotate(speed, degPerMin)
         self.send({"moveRotate": [speed, degPerMin]})
 
     def rotate(self, angle):
-        #super(RoverClient, self).rotate(angle)
         self.send({"rotate": angle})
 
     def stop(self):
-        #super(RoverClient, self).stop()
         self.send({"stop": True})
 
     def setMLEnabled(self, val):
-        #super(RoverClient, self).setMLEnabled(val)
         self.send({"setMLEnabled": val})
 
 
@@ -185,7 +180,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         client.disconnect()
         exit(0)
-    except Exception:
+    except:
         traceback.print_exc()
         client.disconnect()
         exit(1)

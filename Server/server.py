@@ -3,13 +3,16 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
-from interfaces import debug, InterruptableEvent, PORT, checkLoadJson
+from utils import debug, PORT, checkLoadJson
 import traceback
 import socket
 import random
 import time
 import threading
 import json
+
+global lock
+lock = threading.RLock()
 
 
 class RoverServer:
@@ -53,6 +56,7 @@ class RoverServer:
         threading.Thread(target=self.connectionPool, args=(), daemon=True).start()
 
     def serverInit(self):
+        global lock
         debug("Server init...")
         try:
             self.socket.bind((self.ip, self.port))
@@ -70,16 +74,16 @@ class RoverServer:
                 sock, addr = self.socket.accept()
                 conn = self.Connection(sock)
                 debug("Client connesso. Indirizzo: " + str(addr[0]))
-                if len(self.conns) <= 16:
-                    thread = threading.Thread(target=self.clientHandler, args=([conn]), daemon=True)
-                    thread.start()
-                    #anche qui l'inserimento di una connessione deve essere thread safe
-                    self.conns[conn] = thread
-                    conn.send(b"<PING>\n")
-                    debug("Numero threads: " + str(len(self.conns)))
-                else:
-                    debug("Numero di threads massimo raggiunto!")
-                    conn.close()
+                with lock:
+                    if len(self.conns) <= 16:
+                        thread = threading.Thread(target=self.clientHandler, args=([conn]), daemon=True)
+                        thread.start()
+                        self.conns[conn] = thread
+                        conn.send(b"<PING>\n")
+                        debug("Numero threads: " + str(len(self.conns)))
+                    else:
+                        debug("Numero di threads massimo raggiunto!")
+                        conn.close()
         except (ConnectionResetError, ConnectionAbortedError, socket.timeout):
             debug("Connection reset")
         except BlockingIOError:
@@ -90,12 +94,15 @@ class RoverServer:
         debug("Closing server...")
 
     def connectionPool(self):
+        global lock
         while True:
-            for i in list(self.conns):
-                if not i.isAlive:
-                    self.conns[i].join()
-                    del self.conns[i]
-                    debug("Numero connessioni: " + str(len(self.conns)))
+            with lock:
+                for i in list(self.conns):
+                    if not i.isAlive:
+                        self.conns[i].join()
+                        del self.conns[i]
+                        debug("Numero connessioni: " + str(len(self.conns)))
+            time.sleep(1)
 
     def disconnect(self):
         debug("Stopping server...")
@@ -153,16 +160,16 @@ class RoverServer:
         debug("Client handler stopped.")
 
     def send(self, rawData):
-        localcopy = self.conns.copy().keys()
-        for conn in localcopy:
-            try:
-                data = json.dumps(rawData)
-                conn.send((data + "\n").encode())
-            except:
-                print("Send error")
-                traceback.print_exc()
-                conn.close()
-#        self.updateConnsList()
+        global lock
+        with lock:
+            for conn in self.conns.keys():
+                try:
+                    data = json.dumps(rawData)
+                    conn.send((data + "\n").encode())
+                except:
+                    print("Send error")
+                    traceback.print_exc()
+                    conn.close()
 
     def ackServer(self):
         try:
@@ -200,17 +207,16 @@ class RoverServer:
 if __name__ == "__main__":
     server = None
     batt = 100
-    acc = [0,0,0]
-    event = InterruptableEvent()
+    acc = [0, 0, 0]
     try:
         server = RoverServer(PORT)
         while True:
-            acc = [random.gauss(2,3) for i in range(3)]
-            batt -= round(random.random(),2) * 0.1
+            acc = [random.gauss(2, 3) for i in range(3)]
+            batt -= round(random.random(), 2) * 0.1
             if batt < 0:
                 batt = 0
-            server.send({"updateBatt":batt})
-            server.send({"updateAccel":acc})
+            server.send({"updateBatt": batt})
+            server.send({"updateAccel": acc})
             time.sleep(0.2)
     except KeyboardInterrupt:
         print("KeyboardInterrupt")

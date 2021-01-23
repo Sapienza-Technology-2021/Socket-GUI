@@ -2,15 +2,14 @@
 
 ## Interfaccia
 
-Nulla al momento
+Inviare ML enabled
 
 ## Server socket
 
-- Definire pacchetti JSON
-- Interpretare dati
+Manca thread lettura e invio dati sensori batteria ecc.
 
 ## Client
 
-Boh
-
 ## Varie ed eventuali
+
+Tutta la parte del braccio

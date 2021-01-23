@@ -37,7 +37,15 @@
        </widget>
       </item>
       <item>
-       <widget class="QLCDNumber" name="batteryNumber"/>
+       <widget class="QLCDNumber" name="batteryNumber">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="Line" name="line">
@@ -54,7 +62,15 @@
        </widget>
       </item>
       <item>
-       <widget class="QLCDNumber" name="cpuTempNumber"/>
+       <widget class="QLCDNumber" name="cpuTempNumber">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -71,7 +87,7 @@
        </font>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="connTab">
        <attribute name="title">
