@@ -13,8 +13,8 @@ class RoverUi(QtWidgets.QMainWindow):
     def __init__(self):
         super(RoverUi, self).__init__()
         uic.loadUi('GUI/form.ui', self)
-        self.roverInterface = RoverClient()
-        self.roverInterface.setControllerInterface(self)
+        self.roverClient = RoverClient()
+        self.roverClient.setControllerInterface(self)
         self.registerRecvFunctions()
         self.setWindowIcon(QtGui.QIcon('res/icon.png'))
         self.setWindowTitle(APP_NAME)
@@ -28,6 +28,7 @@ class RoverUi(QtWidgets.QMainWindow):
         self.moveDownLeft.clicked.connect(self.moveDownLeftListener)
         self.moveDownRight.clicked.connect(self.moveDownRightListener)
         self.moveStop.clicked.connect(self.moveStopListener)
+        self.enableMLBox.stateChanged.connect(self.sendSetMLEnabled)
         self.tabWidget.setCurrentIndex(0)
         self.enableComponents(False)
         self.show()
@@ -35,7 +36,7 @@ class RoverUi(QtWidgets.QMainWindow):
     def registerRecvFunctions(self):
         commands = ["updateAccel", "updateGyro", "updateMagn", "updateIrDistance", "updateBatt", "updateCpuTemp",
                     "updateRPMFeedback", "setMLEnabled"]
-        self.roverInterface.registerFunctions(commands)
+        self.roverClient.registerFunctions(commands)
         
     def onDisconnect(self):
         self.enableComponents(False)
@@ -44,15 +45,15 @@ class RoverUi(QtWidgets.QMainWindow):
     # Button listeners
 
     def connectBtnListener(self):
-        if self.roverInterface.isConnected():
-            self.roverInterface.disconnect()
+        if self.roverClient.isConnected():
+            self.roverClient.disconnect()
             self.onDisconnect()
         else:
             ip = self.ipField.text()
             if ip == "":
                 QMessageBox.warning(self, "Errore", "Nessun IP inserito!")
             else:
-                if self.roverInterface.connect(ip, PORT):
+                if self.roverClient.connect(ip, PORT):
                     self.enableComponents(True)
                     self.ipField.setEnabled(False)
                     self.connectButton.setText("Disconnetti")
@@ -74,31 +75,37 @@ class RoverUi(QtWidgets.QMainWindow):
         self.degPerClickSlider.setEnabled(b)
 
     def moveUpListener(self):
-        self.roverInterface.move(self.speedSlider.value())
+        self.roverClient.move(self.speedSlider.value())
 
     def moveDownListener(self):
-        self.roverInterface.move(-self.speedSlider.value())
+        self.roverClient.move(-self.speedSlider.value())
 
     def rotCCWListener(self):
-        self.roverInterface.rotate(-self.degPerClickSlider.value())
+        self.roverClient.rotate(-self.degPerClickSlider.value())
 
     def rotCWListener(self):
-        self.roverInterface.rotate(self.degPerClickSlider.value())
+        self.roverClient.rotate(self.degPerClickSlider.value())
 
     def moveUpRightListener(self):
-        self.roverInterface.moveRotate(self.speedSlider.value(), self.rotSpeedSlider.value())
+        self.roverClient.moveRotate(self.speedSlider.value(), self.rotSpeedSlider.value())
 
     def moveUpLeftListener(self):
-        self.roverInterface.moveRotate(self.speedSlider.value(), -self.rotSpeedSlider.value())
+        self.roverClient.moveRotate(self.speedSlider.value(), -self.rotSpeedSlider.value())
 
     def moveDownLeftListener(self):
-        self.roverInterface.moveRotate(-self.speedSlider.value(), -self.rotSpeedSlider.value())
+        self.roverClient.moveRotate(-self.speedSlider.value(), -self.rotSpeedSlider.value())
 
     def moveDownRightListener(self):
-        self.roverInterface.moveRotate(-self.speedSlider.value(), self.rotSpeedSlider.value())
+        self.roverClient.moveRotate(-self.speedSlider.value(), self.rotSpeedSlider.value())
 
     def moveStopListener(self):
-        self.roverInterface.stop()
+        self.roverClient.stop()
+
+    def sendSetMLEnabled(self, val):
+        if self.enableMLBox.isChecked():
+            self.roverClient.setMLEnabled(True)
+        else:
+            self.roverClient.setMLEnabled(False)
 
     # Controller interface methods
     def updateAccel(self, xyz):

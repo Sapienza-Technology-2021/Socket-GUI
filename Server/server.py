@@ -54,6 +54,7 @@ class RoverServer:
         ack_th = threading.Thread(target=self.ackServer, args=(), daemon=True)
         ack_th.start()
         threading.Thread(target=self.connectionPool, args=(), daemon=True).start()
+        self.mlenabled = False
 
     def serverInit(self):
         global lock
@@ -119,10 +120,11 @@ class RoverServer:
             for item in commands:
                 if item in loaded:
                     debug(item + " " + str(loaded[item]))
+                    getattr(self, item)(loaded[item])
         except json.JSONDecodeError:
             debug("Corrupted Json dictionary!")
             traceback.print_exc()
-        except Exception:
+        except:
             traceback.print_exc()
 
     def clientHandler(self, conn):
@@ -202,6 +204,10 @@ class RoverServer:
 
     def updateBatt(self):
         self.send({"updateBatt": 100})
+
+    def setMLEnabled(self, val):
+        self.mlenabled = val
+        self.send({"setMLEnabled": self.mlenabled})
 
 
 if __name__ == "__main__":
