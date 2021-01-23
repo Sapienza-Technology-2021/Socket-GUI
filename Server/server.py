@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfi
 from interfaces import debug, InterruptableEvent, PORT, checkLoadJson
 import traceback
 import socket
+import random
 import time
 import threading
 import json
@@ -72,6 +73,7 @@ class RoverServer:
                 if len(self.conns) <= 16:
                     thread = threading.Thread(target=self.clientHandler, args=([conn]), daemon=True)
                     thread.start()
+                    #anche qui l'inserimento di una connessione deve essere thread safe
                     self.conns[conn] = thread
                     conn.send(b"<PING>\n")
                     debug("Numero threads: " + str(len(self.conns)))
@@ -151,7 +153,8 @@ class RoverServer:
         debug("Client handler stopped.")
 
     def send(self, rawData):
-        for conn in self.conns.keys():
+        localcopy = self.conns.copy().keys()
+        for conn in localcopy:
             try:
                 data = json.dumps(rawData)
                 conn.send((data + "\n").encode())
@@ -159,6 +162,7 @@ class RoverServer:
                 print("Send error")
                 traceback.print_exc()
                 conn.close()
+#        self.updateConnsList()
 
     def ackServer(self):
         try:
@@ -190,19 +194,24 @@ class RoverServer:
         debug("Quitting ACK server...")
 
     def updateBatt(self):
-        # quando una connessione si chiude il server non modifica il pool delle connessioni e tenta di inviare su socket già chiusi
-        if len(self.conns) > 0:
-            self.send({"updateBatt": 100})
+        self.send({"updateBatt": 100})
 
 
 if __name__ == "__main__":
     server = None
+    batt = 100
+    acc = [0,0,0]
     event = InterruptableEvent()
     try:
         server = RoverServer(PORT)
         while True:
-            server.updateBatt()
-            time.sleep(5)
+            acc = [random.gauss(2,3) for i in range(3)]
+            batt -= round(random.random(),2) * 0.1
+            if batt < 0:
+                batt = 0
+            server.send({"updateBatt":batt})
+            server.send({"updateAccel":acc})
+            time.sleep(0.2)
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         if server is not None:

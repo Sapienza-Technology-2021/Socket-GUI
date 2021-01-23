@@ -15,11 +15,21 @@ class RoverClient():
         self.scan_run = False
         self.discover_socket = None
         self.discover_client_sock = None
+        self.commands = []
         # threading.Thread(target = self.scan, args=(), daemon=True).start()
+
+    def setControllerInterface(self, interface):
+        self.interface = interface
+
+    def registerFunctions(self, cmds):
+        self.commands = cmds
 
     def ensureConnection(self):
         if self.connected is False:
-            raise RoverNotConnectedError
+            try:
+                self.interface.onDisconnect()
+            except:
+                pass
 
     def scan(self):
         # da implementare la perdita e il reset della connessione
@@ -72,14 +82,12 @@ class RoverClient():
     def parse(self, data):
         try:
             loaded = checkLoadJson(data)
-            commands = ["updateAccel", "updateGyro", "updateMagn", "updateIrDistance", "updateBatt", "updateCpuTemp",
-                        "updateRPMFeedback", "setMLEnabled"]
             if loaded is None:
                 return
-            for item in commands:
+            for item in self.commands:
                 if (item in loaded):
                     debug(item + " " + str(loaded[item]))
-                    getattr(self, item)(loaded[item])
+                    getattr(self.interface, item)(loaded[item])
         except json.JSONDecodeError:
             debug("Corrupted Json dictionary!")
             traceback.print_exc()
@@ -120,7 +128,6 @@ class RoverClient():
         debug("Server handler stopped.")
 
     def connect(self, ip, port):
-        super(RoverClient, self).connect(ip, port)
         try:
             self.sock.connect((ip, port))
             print("Connesso al server: ", ip)
@@ -134,30 +141,37 @@ class RoverClient():
             self.connected = False
             return False
 
+    def isConnected(self):
+        return self.connected
+
     def disconnect(self):
-        super(RoverClient, self).disconnect()
+        #super(RoverClient, self).disconnect()
         self.connected = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.stopScan()
+        try:
+            self.interface.onDisconnect()
+        except:
+            pass
 
     def move(self, speed):
-        super(RoverClient, self).move(speed)
+        #super(RoverClient, self).move(speed)
         self.send({"move": speed})
 
     def moveRotate(self, speed, degPerMin):
-        super(RoverClient, self).moveRotate(speed, degPerMin)
+        #super(RoverClient, self).moveRotate(speed, degPerMin)
         self.send({"moveRotate": [speed, degPerMin]})
 
     def rotate(self, angle):
-        super(RoverClient, self).rotate(angle)
+        #super(RoverClient, self).rotate(angle)
         self.send({"rotate": angle})
 
     def stop(self):
-        super(RoverClient, self).stop()
+        #super(RoverClient, self).stop()
         self.send({"stop": True})
 
     def setMLEnabled(self, val):
-        super(RoverClient, self).setMLEnabled(val)
+        #super(RoverClient, self).setMLEnabled(val)
         self.send({"setMLEnabled": val})
 
 
