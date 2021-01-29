@@ -202,27 +202,51 @@ class RoverServer:
             traceback.print_exc()
         debug("Quitting ACK server...")
 
-    def updateBatt(self):
-        self.send({"updateBatt": 100})
-
     def setMLEnabled(self, val):
         self.mlenabled = val
         self.send({"setMLEnabled": self.mlenabled})
+    
+    #funzioni motori
 
+    def move(self, speed):
+        debug(f"Movimento con velocità: {str(speed)}")
+        #self.send({"move": speed})
 
-if __name__ == "__main__":
-    server = None
-    batt = 100
-    acc = [0, 0, 0]
-    try:
-        server = RoverServer(PORT)
+    def moveRotate(self, speedvec):
+        speed = speedvec[0]
+        degPerMin = speedvec[1]
+        debug(f"Movimento con velocità {str(speed)} e rotazione {str(degPerMin)}")
+        #self.send({"moveRotate": [speed, degPerMin]})
+
+    def rotate(self, angle):
+        debug(f"Rotazione di {str(angle)}")
+        #self.send({"rotate": angle})
+
+    def stop(self, value):
+        debug("Stop rover")
+        #self.send({"stop": True})
+
+    #thread di aggiornamento sensori
+
+    def updateAll(self):
+        batt = 100
+        acc = [0, 0, 0]
         while True:
             acc = [random.gauss(2, 3) for i in range(3)]
             batt -= round(random.random(), 2) * 0.1
             if batt < 0:
                 batt = 0
-            server.send({"updateBatt": batt})
-            server.send({"updateAccel": acc})
+            self.send({"updateBatt": batt})
+            self.send({"updateAccel": acc})
+            time.sleep(0.2)
+
+
+if __name__ == "__main__":
+    server = None
+    try:
+        server = RoverServer(PORT)
+        threading.Thread(target = server.updateAll, args=(), daemon=True).start()
+        while True:
             time.sleep(0.2)
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
