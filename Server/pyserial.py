@@ -4,21 +4,21 @@ from time import sleep
 import serial
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports as listSerialPorts
-
+import threading
 import sys
 
 
 class serialConnection():
     def __init__(self):
         self.serialPort = None
-        self.serverConnected = False
-        self.startSerialConnection()
-        self.startReceive()
+        self.serialConnected = False
+        self.startSerialConnection_th()
+        self.serialLoopReceive_th()
             
 
-    def loopReceive(self):
+    def serialLoopReceive(self):
         while True:
-            if not self.serverConnected:
+            if not self.serialConnected:
                 sleep(2)
             else:
                 response = self.serialRead()
@@ -47,10 +47,10 @@ class serialConnection():
             print("Serial port not initialized, attempted reading")
             return ""
 
-    def run(self):
+    def runSerialConnection(self):
         #global serialPort
         #global serverRunning
-        while not self.serverConnected:
+        while not self.serialConnected:
             try:
                 print("Scanning serial ports...")
                 #print(listSerialPorts())
@@ -60,7 +60,7 @@ class serialConnection():
                     print("Trying with " + port.name)
                     try:
                         self.serialPort = serial.Serial(port=port.device, baudrate=9600, timeout=5)
-                            #rtscts=True, dsrdtr=True, exclusive=True)
+                            #rtscts=True, dsrdtr=True, exclusive=True) chiedere a Marco :)
                     except:
                         print(port.name + " unavailable.")
                         continue
@@ -71,7 +71,7 @@ class serialConnection():
                     print(response)
                     if response == "$W":
                         print(port.device + " connected.")
-                        self.serverConnected = True
+                        self.serialConnected = True
                         break
                     else:
                         print("No answer from " + port.name)
@@ -87,12 +87,12 @@ class serialConnection():
             sleep(1)
         print("Sensors-refresh thread stopped")
     
-    def startSerialConnection(self):
-        th_serialConn = threading.Thread(target = self.run, args = ())
+    def startSerialConnection_th(self):
+        th_serialConn = threading.Thread(target = self.runSerialConnection, args = ())
         th_serialConn.start()
     
-    def startReceive(self):
-        th_receive = threading.Thread(target = self.loopReceive, args = ())
+    def serialLoopReceive_th(self):
+        th_receive = threading.Thread(target = self.serialLoopReceive, args = ())
         th_receive.start()
 
 try:

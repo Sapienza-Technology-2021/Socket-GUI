@@ -11,6 +11,11 @@ import time
 import threading
 import json
 
+from time import sleep
+import serial
+from serial.serialutil import SerialException
+from serial.tools.list_ports import comports as listSerialPorts
+
 global lock
 lock = threading.RLock()
 
@@ -28,7 +33,7 @@ class RoverServer:
         def close(self):
             if self.isAlive:
                 self.isAlive = False
-                print("Chiuso")
+                debug("Chiuso")
                 self.conn.close()
                 self.conn = None
 
@@ -38,9 +43,85 @@ class RoverServer:
         def recv(self, dataLen):
             if self.isAlive:
                 return self.conn.recv(dataLen)
+    
+    # pyserial
+    class serialConnection:
+        def __init__(self):
+            self.serialPort = None
+            self.serialConnected = False
+            self.startSerialConnection_th()
+
+        def serialPrint(self, message):
+            #global serialPort
+            if self.serialPort is not None and self.serialPort.isOpen:
+                try:
+                    message+="\n"
+                    self.serialPort.write(message.encode('utf-8'))
+                    self.serialPort.flush()
+                except:
+                    debug("Could not print serial message!")
+            else:
+                debug("Serial port not initialized, attempted writing")
+
+        def serialRead(self):
+            #global serialPort
+            if self.serialPort is not None and self.serialPort.isOpen:
+                try:
+                    return self.serialPort.readline().decode("utf-8").replace("\n","").replace("\r","")
+                except:
+                    debug("Could not read serial message!")
+                    return ""
+            else:
+                debug("Serial port not initialized, attempted reading")
+                return ""
+
+        def runSerialConnection(self):
+            #global serialPort
+            #global serverRunning
+            while not self.serialConnected:
+                try:
+                    debug("Scanning serial ports...")
+                    #debug(listSerialPorts())
+                    #for port in listSerialPorts():
+                        #debug("Trying with " + port.name)
+                    for port in listSerialPorts():
+                        debug("Trying with " + port.name)
+                        try:
+                            self.serialPort = serial.Serial(port=port.device, baudrate=9600, timeout=5)
+                                #rtscts=True, dsrdtr=True, exclusive=True) chiedere a Marco :)
+                        except:
+                            debug(port.name + " unavailable.")
+                            continue
+                        sleep(2)
+                        self.serialPrint("$W")
+                        sleep(0.3)
+                        response = self.serialRead()
+                        debug(response)
+                        if response == "$W":
+                            debug(port.device + " connected.")
+                            self.serialConnected = True
+                            break
+                        else:
+                            debug("No answer from " + port.name)
+                            self.serialPort.close()
+                            self.serialPort = None
+                except:
+                    debug("Unexpected error:", sys.exc_info())
+                    debug("Unexpected error, Arduino and the sensors are now disconnected!")
+                    #addUserMessage("Server", "Errore inaspettato, sensori e Arduino si sono disconnessi!", MessageType.ERROR)
+                    if self.serialPort is not None:
+                        self.serialPort.close()
+                        self.serialPort = None
+                sleep(1)
+            debug("Sensors-refresh thread stopped")
+        
+        def startSerialConnection_th(self):
+            th_serialConn = threading.Thread(target = self.runSerialConnection, args = (), daemon=True)
+            th_serialConn.start()        
 
     def __init__(self, port):
         super().__init__()
+        self.serial = self.serialConnection()
         self.ip = ""
         self.port = port
         self.data = {}
@@ -55,6 +136,46 @@ class RoverServer:
         ack_th.start()
         threading.Thread(target=self.connectionPool, args=(), daemon=True).start()
         self.mlenabled = False
+        th_serial_receive = threading.Thread(target = self.serialLoopReceive, args = (), daemon=True).start()
+
+    def serialLoopReceive(self):
+            while True:
+                if not self.serial.serialConnected:
+                    time.sleep(2)
+                else:
+                    message = self.serial.serialRead()
+                    debug(message)
+                    # for command in ["B205%", "A201%451%456%", "M153%454%1332%", "G1522%1234%4355%"]: # riga di test, non serve il for
+                    #     self.serial.serialPrint(command) ######## RIGA DI TEST
+                    #     time.sleep(0.5)                  ########
+                    #     message = self.serial.serialRead()
+                    #     #receive
+                    #     if (message == ""):
+                    #         # avvisa client
+                    #         debug("Non ho un cazzo da darti")
+                    #         self.serial.serialConnected = None
+                    #         self.serial.startSerialConnection_th()
+                    #     else:
+                    #         # spacchetta e invia con self.send()
+                    #         if message[0] == "A":
+                    #             x, y, z = message[1:-1].split("%")
+                    #             acc = [float(x)/100,float(y)/100,float(z)/100]
+                    #             self.send({"updateAccel": acc})
+                    #         elif message[0] == "G":
+                    #             x, y, z = message[1:-1].split("%")
+                    #             gir = [float(x)/100, float(y)/100, float(z)/100]
+                    #             debug(gir)
+                    #             self.send({"updateGyro": gir})
+                    #         elif message[0] == "M":
+                    #             x, y, z = message[1:-1].split("%")
+                    #             magn = [float(x)/100, float(y)/100, float(z)/100]
+                    #             debug(magn)
+                    #             self.send({"updateMagn": magn})
+                    #         elif message [0] == "B":
+                    #             batt = message[1:-1]
+                    #             self.send({"updateBatt": float(batt)/100 })
+                    #         else:
+                    #             debug("Non so come risponderti :(")
 
     def serverInit(self):
         global lock
@@ -169,7 +290,7 @@ class RoverServer:
                     data = json.dumps(rawData)
                     conn.send((data + "\n").encode())
                 except:
-                    print("Send error")
+                    debug("Send error")
                     traceback.print_exc()
                     conn.close()
 
@@ -210,6 +331,7 @@ class RoverServer:
 
     def move(self, speed):
         debug(f"Movimento con velocità: {str(speed)}")
+        self.serial.serialPrint(f">M{str(int(speed*100))}%")
         #self.send({"move": speed})
 
     def moveRotate(self, speedvec):
@@ -245,7 +367,7 @@ if __name__ == "__main__":
     server = None
     try:
         server = RoverServer(PORT)
-        threading.Thread(target = server.updateAll, args=(), daemon=True).start()
+        #threading.Thread(target = server.updateAll, args=(), daemon=True).start()
         while True:
             time.sleep(0.2)
     except KeyboardInterrupt:
