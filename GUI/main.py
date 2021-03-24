@@ -1,3 +1,5 @@
+######################### IMPORT #########################
+
 import inspect
 import os
 import sys
@@ -8,8 +10,10 @@ from PyQt5.QtWidgets import QMessageBox
 from utils import APP_NAME, PORT
 from roverclient import RoverClient
 
+######################### CODE #########################
 
 class RoverUi(QtWidgets.QMainWindow):
+    ######################### INIT-ROVERUI #########################
     def __init__(self):
         super(RoverUi, self).__init__()
         uic.loadUi('GUI/form.ui', self)
@@ -139,8 +143,8 @@ class RoverUi(QtWidgets.QMainWindow):
     def setMLEnabled(self, val):
         self.enableMLBox.setChecked(val)
 
+######################### MAIN #########################
 
-# Main
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
     gui = RoverUi()

@@ -1,3 +1,5 @@
+######################### IMPORT #########################
+
 import json
 import socket
 import threading
@@ -6,8 +8,11 @@ import traceback
 
 from utils import checkLoadJson, debug, PORT, InterruptableEvent
 
+######################### CODE #########################
 
 class RoverClient:
+
+######################### INIT-ROVERCLIENT #########################    
     def __init__(self):
         self.connected = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -132,6 +137,7 @@ class RoverClient:
 
     def connect(self, ip, port):
         try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((ip, port))
             print("Connesso al server: ", ip)
             self.connected = True
@@ -149,10 +155,12 @@ class RoverClient:
 
     def disconnect(self):
         self.connected = False
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.close()
         self.stopScan()
         if self.interface is not None:
             self.interface.onDisconnect()
+
+######################### DEF-ROVER #########################
 
     def move(self, speed):
         self.send({"move": speed})
@@ -169,7 +177,7 @@ class RoverClient:
     def setMLEnabled(self, val):
         self.send({"setMLEnabled": val})
 
-
+######################### MAIN #########################
 # Debug
 if __name__ == "__main__":
     client = RoverClient()

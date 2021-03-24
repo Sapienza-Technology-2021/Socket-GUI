@@ -1,3 +1,5 @@
+######################### IMPORT #########################
+
 import inspect
 import os
 import sys
@@ -10,17 +12,20 @@ import random
 import time
 import threading
 import json
-
-from time import sleep
+ 
 import serial
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports as listSerialPorts
 
+######################### GLOBAL #########################
+
 global lock
 lock = threading.RLock()
 
+######################### CODE #########################
 
 class RoverServer:
+######################### CONNECTION-CLASS #########################
     class Connection:
         def __init__(self, conn):
             self.conn = conn
@@ -43,8 +48,8 @@ class RoverServer:
         def recv(self, dataLen):
             if self.isAlive:
                 return self.conn.recv(dataLen)
-    
-    # pyserial
+
+######################### PYSERIAL-CLASS #########################
     class serialConnection:
         def __init__(self):
             self.serialPort = None
@@ -52,7 +57,6 @@ class RoverServer:
             self.startSerialConnection_th()
 
         def serialPrint(self, message):
-            #global serialPort
             if self.serialPort is not None and self.serialPort.isOpen:
                 try:
                     message+="\n"
@@ -64,7 +68,6 @@ class RoverServer:
                 debug("Serial port not initialized, attempted writing")
 
         def serialRead(self):
-            #global serialPort
             if self.serialPort is not None and self.serialPort.isOpen:
                 try:
                     message = self.serialPort.readline().decode("utf-8").replace("\n","").replace("\r","")
@@ -80,8 +83,6 @@ class RoverServer:
                 return ""
 
         def runSerialConnection(self):
-            #global serialPort
-            #global serverRunning
             while not self.serialConnected:
                 try:
                     debug("Scanning serial ports...")
@@ -96,9 +97,9 @@ class RoverServer:
                         except:
                             debug(port.name + " unavailable.")
                             continue
-                        sleep(2)
+                        time.sleep(2)
                         self.serialPrint(">C")
-                        sleep(0.3)
+                        time.sleep(0.3)
                         response = self.serialRead()
                         debug(response)
                         if response == "C4b7caa5d-2634-44f3-ad62-5ffb1e08d73f":
@@ -116,13 +117,15 @@ class RoverServer:
                     if self.serialPort is not None:
                         self.serialPort.close()
                         self.serialPort = None
-                sleep(1)
+                time.sleep(1)
             debug("Sensors-refresh thread stopped")
         
         def startSerialConnection_th(self):
             th_serialConn = threading.Thread(target = self.runSerialConnection, args = (), daemon=True)
-            th_serialConn.start()        
+            th_serialConn.start()       
 
+ 
+######################### INIT-SERVER #########################
     def __init__(self, port):
         super().__init__()
         self.serial = self.serialConnection()
@@ -140,8 +143,10 @@ class RoverServer:
         ack_th.start()
         threading.Thread(target=self.connectionPool, args=(), daemon=True).start()
         self.mlenabled = False
-        th_serial_receive = threading.Thread(target = self.serialLoopReceive, args = (), daemon=True).start()
-        th_update_request = threading.Thread(target = self.updateRequest, args = (), daemon=True).start()
+        threading.Thread(target = self.serialLoopReceive, args = (), daemon=True).start()
+        threading.Thread(target = self.updateRequest, args = (), daemon=True).start()
+
+######################### DEF-SERIAL #########################
 
     def serialLoopReceive(self):
             while True:
@@ -175,12 +180,12 @@ class RoverServer:
                             debug(magn)
                             self.send({"updateMagn": magn})
                         elif message [0] == "B":
-                            batt = message[1:-1]
+                            batt = float(message[1:-1])/100
                             debug(batt)
-                            self.send({"updateBatt": float(batt)/100 })
+                            self.send({"updateBatt": batt })
                         elif message [0] == "T":
-                            Temp = message[1:-1]
-                            self.send({"updateCpuTemp": float(Temp)/100 })
+                            temp = float(message[1:-1])/100
+                            self.send({"updateCpuTemp": temp })
                         else:
                             debug("Non so come risponderti :(")
                     # for command in ["B205%", "A201%451%456%", "M153%454%1332%", "G1522%1234%4355%"]: # riga di test, non serve il for
@@ -191,21 +196,19 @@ class RoverServer:
             if not self.serial.serialConnected:
                 time.sleep(2)
             else:
-                batt = 100
-                acc = [0, 0, 0]
-                magn = [0, 0, 0]
-                gir = [0, 0, 0] 
-                acc = [random.gauss(2, 3) for i in range(3)]
-                magn = [random.gauss(2, 3) for i in range(3)]
-                gir = [random.gauss(2, 3) for i in range(3)]
-                batt -= round(random.random(), 2) * 0.1
+                batt = 100 
+                acc = [random.randint(0, 100) for i in range(3)]
+                magn = [random.randint(0, 100) for i in range(3)]
+                gir = [random.randint(0, 100) for i in range(3)]
+                batt -= random.randint(0, 101)
                 if batt < 0:
                     batt = 0
                 for command in [f"B{batt*100}%", f"A{acc[0]*100}%{acc[1]*100}%{acc[2]*100}%", f"M{magn[0]*100}%{magn[1]*100}%{magn[2]*100}%", f"G{gir[0]*100}%{gir[1]*100}%{gir[2]*100}%"]: # riga di test
                     # debug(command)
                     self.serial.serialPrint(command)
-            time.sleep(5)
+            time.sleep(2)
 
+######################### DEF-SERVER #########################
 
     def serverInit(self):
         global lock
@@ -353,6 +356,8 @@ class RoverServer:
             traceback.print_exc()
         debug("Quitting ACK server...")
 
+######################### DEF-ROVER #########################
+
     def setMLEnabled(self, val):
         self.mlenabled = val
         self.send({"setMLEnabled": self.mlenabled})
@@ -410,6 +415,7 @@ class RoverServer:
     #         self.send({"updateAccel": acc})
     #         time.sleep(0.2)
 
+######################### MAIN #########################
 
 if __name__ == "__main__":
     server = None
