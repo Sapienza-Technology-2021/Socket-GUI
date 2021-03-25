@@ -1,25 +1,28 @@
 import json
+import logging
+import sys
 import threading
 
 APP_NAME = "Tech Team Rover"
 PORT = 12345
-DEBUG = True
 
 
-def debug(msg):
-    global DEBUG
-    if DEBUG is True:
-        print(msg)
+def init_logger():
+    logging.StreamHandler().setFormatter(
+        logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s"))
+    logger = logging.getLogger()
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.setLevel(logging.DEBUG)
 
 
-def checkLoadJson(data):
+def check_load_json(data):
     if data.startswith("<") and data.endswith(">"):
-        debug("Received test message: " + data)
+        logging.info("Received test message: " + data)
         return None
     lb = data.count("{")
     rb = data.count("}")
     if lb != rb or lb == 0 or data[0] != "{" or data[len(data) - 1] != "}":
-        debug("Corrupted Json")
+        logging.warning("Corrupted Json")
         return None
     count = 0
     for i in range(len(data)):
@@ -28,7 +31,7 @@ def checkLoadJson(data):
         elif data[i] == "}":
             count -= 1
         if count == 0 and (i + 1) != len(data) and i != 0:
-            debug("Corrupted Json")
+            logging.warning("Corrupted Json")
             return None
     return json.loads(data)
 
