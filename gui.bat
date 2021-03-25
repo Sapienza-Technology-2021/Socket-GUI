@@ -1,3 +1,4 @@
 @echo off
-python.exe GUI\main.py
+cd GUI
+python.exe main.py
 pause

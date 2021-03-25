@@ -9,13 +9,21 @@
 ## Requisiti di sviluppo GUI
 
 - [QT Creator](https://www.qt.io/download-open-source)
+- [PyCharm](https://www.jetbrains.com/pycharm/download/) (consigliato)
 
 ## Requisiti di esecuzione
 
 - `python3.9`, [Download](https://www.python.org/)
   - Deve essere impostato nella variabile d'ambiente PATH
 - `PyQt5`, [pip3 install PyQt5](https://pypi.org/project/PyQt5/)
-- `serial`, [pip3 install pyserial]
+- `serial`, [pip3 install pyserial](https://pyserial.readthedocs.io/en/latest/pyserial_api.html)
+
+## Esecuzione
+
+- Server
+  - Lanciare `.\server.bat` oppure la configurazione "Server" in PyCharm
+- Interfaccia
+  - `.\gui.bat` oppure la configurazione "Interfaccia" in PyCharm
 
 ## Protocollo di comunicazione socket
 
