@@ -14,7 +14,7 @@ from roverclient import RoverClient
 class RoverUi(QtWidgets.QMainWindow):
     def __init__(self):
         super(RoverUi, self).__init__()
-        uic.loadUi('GUI/form.ui', self)
+        uic.loadUi('form.ui', self)
         self.roverClient = RoverClient()
         self.roverClient.set_client_controller(self)
         self.roverClient.register_functions(
