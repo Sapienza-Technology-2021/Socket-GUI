@@ -1,13 +1,18 @@
 import json
+import logging
 import socket
 import threading
 import time
-import traceback
 
-from utils import checkLoadJson, debug, PORT, InterruptableEvent
+from utils import check_load_json, PORT, InterruptableEvent, init_logger
 
+init_logger()
+
+
+######################### CLIENT CLASS #########################
 
 class RoverClient:
+
     def __init__(self):
         self.connected = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -19,18 +24,18 @@ class RoverClient:
         self.interface = None
         # threading.Thread(target = self.scan, args=(), daemon=True).start()
 
-    def setControllerInterface(self, interface):
+    def set_client_controller(self, interface):
         self.interface = interface
 
-    def registerFunctions(self, cmds):
-        self.commands = cmds
+    def register_functions(self, commands):
+        self.commands = commands
 
-    def ensureConnection(self):
+    def ensure_connection(self):
         if self.connected:
             return True
         else:
             if self.interface is not None:
-                self.interface.onDisconnect()
+                self.interface.on_disconnection()
             return False
 
     def scan(self):
@@ -39,10 +44,9 @@ class RoverClient:
             self.discover_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.discover_socket.bind(("", 12346))
             self.discover_socket.settimeout(1)
-            print("ACK SERVER in ascolto")
+            logging.info("Ack server init")
         except:
-            traceback.print_exc()
-            print("Errore di inizializzazione acknowledgment server")
+            logging.error("Ack server init error")
             time.sleep(0.2)
             self.scan()
         while self.scan_run and not self.connected:
@@ -53,28 +57,26 @@ class RoverClient:
                 response, addr = self.discover_socket.recvfrom(1024)
                 if response == b"ack":
                     self.server_ip = addr[0]
-                    print("Server trovato: ", self.server_ip)
+                    logging.info("Server found: " + self.server_ip)
                     self.connect(self.server_ip, PORT)
             except socket.timeout:
                 pass
             except:
-                traceback.print_exc()
-                print("Errore riscontrato nell'invio di pacchetti broadcast")
+                logging.error("Broadcast send error")
                 time.sleep(1)
-        print("Scan stopped")
+        logging.info("Scan stopped")
 
     def send(self, data):
-        if self.ensureConnection():
+        if self.ensure_connection():
             try:
                 data = json.dumps(data)
                 self.sock.send((data + "\n").encode())
             except:
-                print("Send error")
-                traceback.print_exc()
+                logging.error("Send error!")
                 self.disconnect()
 
-    def stopScan(self):
-        print("Stopping thread...")
+    def stop_scan(self):
+        logging.info("Stopping thread...")
         self.scan_run = False
         if self.discover_socket is not None:
             self.discover_socket.close()
@@ -83,22 +85,21 @@ class RoverClient:
 
     def parse(self, data):
         try:
-            loaded = checkLoadJson(data)
+            loaded = check_load_json(data)
             if loaded is None:
                 return
             for item in self.commands:
                 if item in loaded:
-                    debug(item + " " + str(loaded[item]))
+                    logging.info(item + " " + str(loaded[item]))
                     if self.interface is not None:
                         getattr(self.interface, item)(loaded[item])
         except json.JSONDecodeError:
-            debug("Corrupted Json dictionary!")
-            traceback.print_exc()
-        except Exception as e:
-            traceback.print_exc()
+            logging.warning("Corrupted Json dictionary!")
+        except:
+            logging.error("Parsing error!")
 
     def serverHandler(self):
-        debug("Handler thread start")
+        logging.info("Handler thread start")
         message = ""
         count = 0
         try:
@@ -107,8 +108,8 @@ class RoverClient:
                 marker = buffer.find("\n")
                 if marker >= 0:
                     message += buffer[:marker]
-                    debug("Client receive")
-                    debug(message)
+                    logging.info("Client receive")
+                    logging.info(message)
                     self.parse(message)
                     message = ""
                     count = 0
@@ -120,27 +121,26 @@ class RoverClient:
                 if buffer == b"":
                     raise Exception
         except (ConnectionResetError, ConnectionAbortedError, socket.timeout):
-            debug("Connection reset")
+            logging.warning("Connection reset")
             self.disconnect()
         except BlockingIOError:
-            debug("Blocking IO error")
+            logging.warning("Blocking IO error")
         except:
-            debug("Disconnesso")
-            traceback.print_exc()
+            logging.warning("Disconnected")
             self.disconnect()
-        debug("Server handler stopped.")
+        logging.info("Server handler stopped.")
 
     def connect(self, ip, port):
         try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((ip, port))
-            print("Connesso al server: ", ip)
+            logging.info("Connected to server " + ip)
             self.connected = True
             threading.Thread(target=self.serverHandler, args=(), daemon=True).start()
             self.sock.send(b"<PING>\n")
             return True
         except:
-            traceback.print_exc()
-            print("Errore riscontrato in fase di connessione")
+            logging.error("Connection error")
             self.connected = False
             return False
 
@@ -149,10 +149,12 @@ class RoverClient:
 
     def disconnect(self):
         self.connected = False
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.stopScan()
+        self.sock.close()
+        self.stop_scan()
         if self.interface is not None:
-            self.interface.onDisconnect()
+            self.interface.on_disconnection()
+
+    ######################### DEF-ROVER #########################
 
     def move(self, speed):
         self.send({"move": speed})
@@ -170,7 +172,8 @@ class RoverClient:
         self.send({"setMLEnabled": val})
 
 
-# Debug
+######################### MAIN #########################
+
 if __name__ == "__main__":
     client = RoverClient()
     event = InterruptableEvent()
@@ -181,6 +184,6 @@ if __name__ == "__main__":
         client.disconnect()
         exit(0)
     except:
-        traceback.print_exc()
+        logging.error("Error in main")
         client.disconnect()
         exit(1)

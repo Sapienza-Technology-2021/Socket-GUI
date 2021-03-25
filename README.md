@@ -2,9 +2,9 @@
 
 ## Utili
 
-- [Git repo](https://github.com/JoGist/SASA-socket-gui)
+- [Git repo](https://github.com/Sapienza-Technology-2021/Socket-GUI)
 - [Homepage European Rover Challenge](https://roverchallenge.eu/en/main-page/)
-- [Regolamento Challenge](https://drive.google.com/file/d/1QK-eHO4zAySQ9jRCbzsc9qRgN-F9gWtm/view)
+- [Regolamento Challenge](https://drive.google.com/file/d/1fdFG12WW0QmHjRp6cL2ikP8UFmEpzSka/view)
 
 ## Requisiti di sviluppo GUI
 
@@ -17,6 +17,10 @@
 - `PyQt5`, [pip3 install PyQt5](https://pypi.org/project/PyQt5/)
 - `serial`, [pip3 install pyserial]
 
-## Interacce e metodi GUI e socket
+## Protocollo di comunicazione socket
 
-Vedi `INTERFACES.md`
+Vedi `JSON.md`
+
+## Protocollo di comunicazione con Teensy
+
+Vedi [repository firmware](https://github.com/Sapienza-Technology-2021/Rover-firmware/blob/master/README.md)

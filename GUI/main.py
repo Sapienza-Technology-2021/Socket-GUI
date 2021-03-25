@@ -9,13 +9,18 @@ from utils import APP_NAME, PORT
 from roverclient import RoverClient
 
 
+######################### USER INTERFACE CLASS #########################
+
 class RoverUi(QtWidgets.QMainWindow):
     def __init__(self):
         super(RoverUi, self).__init__()
         uic.loadUi('GUI/form.ui', self)
         self.roverClient = RoverClient()
-        self.roverClient.setControllerInterface(self)
-        self.registerRecvFunctions()
+        self.roverClient.set_client_controller(self)
+        self.roverClient.register_functions(
+            ["updateAccel", "updateGyro", "updateMagn",
+             "updateIrDistance", "updateBatt", "updateCpuTemp",
+             "updateRPMFeedback", "setMLEnabled"])
         self.setWindowIcon(QtGui.QIcon('res/icon.png'))
         self.setWindowTitle(APP_NAME)
         self.connectButton.clicked.connect(self.connectBtnListener)
@@ -33,21 +38,17 @@ class RoverUi(QtWidgets.QMainWindow):
         self.enableComponents(False)
         self.show()
 
-    def registerRecvFunctions(self):
-        commands = ["updateAccel", "updateGyro", "updateMagn", "updateIrDistance", "updateBatt", "updateCpuTemp",
-                    "updateRPMFeedback", "setMLEnabled"]
-        self.roverClient.registerFunctions(commands)
-        
-    def onDisconnect(self):
+    def on_disconnection(self):
         self.enableComponents(False)
         self.ipField.setEnabled(True)
         self.connectButton.setText("Connetti")
+
     # Button listeners
 
     def connectBtnListener(self):
         if self.roverClient.isConnected():
             self.roverClient.disconnect()
-            self.onDisconnect()
+            self.on_disconnection()
         else:
             ip = self.ipField.text()
             if ip == "":
@@ -120,7 +121,7 @@ class RoverUi(QtWidgets.QMainWindow):
 
     def updateMagn(self, xyz):
         self.magnXNumber.display("{:.2f}".format(xyz[0]))
-        self.magnYNumber.display("{:.2f}".format(xyz[1])) 
+        self.magnYNumber.display("{:.2f}".format(xyz[1]))
         self.magnZNumber.display("{:.2f}".format(xyz[2]))
 
     def updateIrDistance(self, dist1, dist2):
@@ -140,7 +141,8 @@ class RoverUi(QtWidgets.QMainWindow):
         self.enableMLBox.setChecked(val)
 
 
-# Main
+######################### MAIN #########################
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
     gui = RoverUi()
