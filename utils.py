@@ -8,10 +8,10 @@ PORT = 12345
 
 
 def init_logger():
-    logging.StreamHandler().setFormatter(
-        logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s"))
+    log_handler = logging.StreamHandler(sys.stdout)
+    log_handler.setFormatter(logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s"))
     logger = logging.getLogger()
-    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.addHandler(log_handler)
     logger.setLevel(logging.DEBUG)
 
 

@@ -120,7 +120,7 @@ class SerialConnection:
         logging.info("Serial loop stopped")
 
     def start_serial_thread(self):
-        threading.Thread(target=self.run_serial_loop, args=(), daemon=True).start()
+        threading.Thread(target=self.run_serial_loop, args=(), name="Serial find", daemon=True).start()
 
 
 ######################### SERVER #########################
@@ -136,15 +136,15 @@ class RoverServer:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.th_flag = True
-        th_server = threading.Thread(target=self.serverInit, args=(), daemon=True)
+        th_server = threading.Thread(target=self.serverInit, name="Server", args=(), daemon=True)
         th_server.start()
         self.ack_th_flag = True
-        ack_th = threading.Thread(target=self.ackServer, args=(), daemon=True)
+        ack_th = threading.Thread(target=self.ackServer, name="Ack server", args=(), daemon=True)
         ack_th.start()
-        threading.Thread(target=self.connectionPool, args=(), daemon=True).start()
+        threading.Thread(target=self.connectionPool, name="Connect pool", args=(), daemon=True).start()
         self.machine_learning_en = False
-        threading.Thread(target=self.serialLoopReceive, args=(), daemon=True).start()
-        threading.Thread(target=self.updateRequest, args=(), daemon=True).start()
+        threading.Thread(target=self.serialLoopReceive, name="Serial loop", args=(), daemon=True).start()
+        threading.Thread(target=self.updateRequest, args=(), name="Update request", daemon=True).start()
 
     ######################### DEF-SERIAL #########################
 
@@ -232,7 +232,8 @@ class RoverServer:
                 logging.info("Client connesso. Indirizzo: " + str(addr[0]))
                 with lock:
                     if len(self.conns) <= 16:
-                        thread = threading.Thread(target=self.clientHandler, args=([conn]), daemon=True)
+                        thread = threading.Thread(target=self.clientHandler,
+                                                  name="Client handler", args=([conn]), daemon=True)
                         thread.start()
                         self.conns[conn] = thread
                         conn.send(b"<PING>\n")
@@ -374,17 +375,20 @@ class RoverServer:
     def moveToStop(self):
         logging.info("Movimento fino a stop")
         self.serial.println(">m%")
-        # da implementare nell' interfaccia un pulsante di movimento senza parametri (da aggiungere poi ai commands del parse qui nel server)
+        # Da implementare nell' interfaccia un pulsante di movimento senza parametri
+        # (da aggiungere poi ai commands del parse qui nel server)
 
     def setSpeed(self, speed):
         logging.info(f"Velocità massima impostata a: {str(int(speed * 100))}")
         self.serial.println(f">V{str(int(speed * 100))}%")
-        # da implementare nell' interfaccia un pulsante di movimento senza parametri (da aggiungere poi ai commands del parse qui nel server)
+        # Da implementare nell' interfaccia un pulsante di movimento senza parametri
+        # (da aggiungere poi ai commands del parse qui nel server)
 
     def setSpeedPWM(self, speedPWM):
         logging.info(f"Movimento con velocità: {str(speedPWM)} PWM")
         self.serial.println(f">v{str(int(speedPWM * 100))}%")
-        # da implementare nell' interfaccia un pulsante di movimento senza parametri (da aggiungere poi ai commands del parse qui nel server)
+        # Da implementare nell' interfaccia un pulsante di movimento senza parametri
+        # (da aggiungere poi ai commands del parse qui nel server)
 
     def rotate(self, angle):
         logging.info(f"Rotazione di {str(angle)}")
