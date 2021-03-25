@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QMessageBox
 from utils import APP_NAME, PORT
 from roverclient import RoverClient
 
+
 ######################### CODE #########################
 
 class RoverUi(QtWidgets.QMainWindow):
@@ -41,11 +42,12 @@ class RoverUi(QtWidgets.QMainWindow):
         commands = ["updateAccel", "updateGyro", "updateMagn", "updateIrDistance", "updateBatt", "updateCpuTemp",
                     "updateRPMFeedback", "setMLEnabled"]
         self.roverClient.registerFunctions(commands)
-        
+
     def onDisconnect(self):
         self.enableComponents(False)
         self.ipField.setEnabled(True)
         self.connectButton.setText("Connetti")
+
     # Button listeners
 
     def connectBtnListener(self):
@@ -124,7 +126,7 @@ class RoverUi(QtWidgets.QMainWindow):
 
     def updateMagn(self, xyz):
         self.magnXNumber.display("{:.2f}".format(xyz[0]))
-        self.magnYNumber.display("{:.2f}".format(xyz[1])) 
+        self.magnYNumber.display("{:.2f}".format(xyz[1]))
         self.magnZNumber.display("{:.2f}".format(xyz[2]))
 
     def updateIrDistance(self, dist1, dist2):
@@ -142,6 +144,7 @@ class RoverUi(QtWidgets.QMainWindow):
 
     def setMLEnabled(self, val):
         self.enableMLBox.setChecked(val)
+
 
 ######################### MAIN #########################
 

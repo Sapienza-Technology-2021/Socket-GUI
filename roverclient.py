@@ -8,11 +8,12 @@ import traceback
 
 from utils import checkLoadJson, debug, PORT, InterruptableEvent
 
+
 ######################### CODE #########################
 
 class RoverClient:
 
-######################### INIT-ROVERCLIENT #########################    
+    ######################### INIT-ROVERCLIENT #########################
     def __init__(self):
         self.connected = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -160,7 +161,7 @@ class RoverClient:
         if self.interface is not None:
             self.interface.onDisconnect()
 
-######################### DEF-ROVER #########################
+    ######################### DEF-ROVER #########################
 
     def move(self, speed):
         self.send({"move": speed})
@@ -176,6 +177,7 @@ class RoverClient:
 
     def setMLEnabled(self, val):
         self.send({"setMLEnabled": val})
+
 
 ######################### MAIN #########################
 # Debug
