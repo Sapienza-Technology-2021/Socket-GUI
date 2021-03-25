@@ -3,7 +3,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
-from utils import PORT, check_load_json, init_logger, InterruptableEvent
+from utils import PORT, ROVER_UUID, check_load_json, init_logger, InterruptableEvent
 import socket
 import time
 import threading
@@ -66,15 +66,11 @@ class RoverServer:
 
     def serial_read_line(self):
         if self.serialPort is not None and self.serialPort.isOpen:
-            try:
-                message = self.serialPort.readline().decode("utf-8").replace("\n", "").replace("\r", "")
-                if message != "":
-                    return message
-                else:
-                    return None
-            except:
-                logging.error("Could not read serial message!")
+            message = self.serialPort.readline().decode("utf-8").replace("\n", "").replace("\r", "")
+            if message == "":
                 return None
+            else:
+                return message
         else:
             logging.warning("Serial port not initialized, attempted reading")
             return None
@@ -97,52 +93,60 @@ class RoverServer:
                     logging.info("Attempting connection with " + port.name)
                     try:
                         self.serialPort = serial.Serial(port=port.device, baudrate=115200,
-                                                        timeout=5, rtscts=True, dsrdtr=True, exclusive=True)
+                                                        timeout=4, rtscts=True, dsrdtr=True, exclusive=True)
                     except:
                         logging.warning(port.name + " unavailable.")
                         continue
                     time.sleep(1)
                     self.serial_println(">C")
                     time.sleep(0.3)
-                    response = self.serial_read_line()
-                    logging.info(response)
-                    if response == "C4b7caa5d-2634-44f3-ad62-5ffb1e08d73f":
-                        logging.info(port.device + " connected.")
-                        self.serialConnected = True
-                        while self.running:
-                            msg = self.serial_read_line()
-                            if msg is None:
-                                time.sleep(0.3)
-                            elif msg[0] == "L":
-                                logging.info("Serial log: " + msg)
-                            elif msg[0] == "A":
-                                x, y, z = msg[1:-1].split("%")
-                                acc = [float(x) / 100, float(y) / 100, float(z) / 100]
-                                logging.info(acc)
-                                self.socket_broadcast({"updateAccel": acc})
-                            elif msg[0] == "G":
-                                x, y, z = msg[1:-1].split("%")
-                                gir = [float(x) / 100, float(y) / 100, float(z) / 100]
-                                logging.info(gir)
-                                self.socket_broadcast({"updateGyro": gir})
-                            elif msg[0] == "M":
-                                x, y, z = msg[1:-1].split("%")
-                                magn = [float(x) / 100, float(y) / 100, float(z) / 100]
-                                logging.info(magn)
-                                self.socket_broadcast({"updateMagn": magn})
-                            elif msg[0] == "B":
-                                batt = float(msg[1:-1]) / 100
-                                logging.info(batt)
-                                self.socket_broadcast({"updateBatt": batt})
-                            elif msg[0] == "T":
-                                temp = float(msg[1:-1]) / 100
-                                self.socket_broadcast({"updateCpuTemp": temp})
-                            else:
-                                logging.warning("Unknown message: " + msg)
-                    else:
-                        logging.info("No answer from " + port.name)
-                        self.serialPort.close()
-                        self.serialPort = None
+                    start_time = time.time()
+                    while self.serialPort is not None and self.running and self.serialPort.in_waiting:
+                        response = self.serial_read_line()
+                        if response is None:
+                            self.serial_println(">C")
+                        else:
+                            logging.info("Board replied \"" + response + "\"")
+                        if response[1:] == ROVER_UUID:
+                            logging.info(port.device + " connected.")
+                            # TODO(Marco): solo per provare, avvia forzatamente i motori e imposta una velocità
+                            self.serial_println(">E1")
+                            self.serial_println(">V200")
+                            self.serialConnected = True
+                            while self.running:
+                                msg = self.serial_read_line()
+                                if msg is None:
+                                    time.sleep(0.3)
+                                elif msg[0] == "L":
+                                    logging.info("Serial log: " + msg)
+                                elif msg[0] == "A":
+                                    x, y, z = msg[1:-1].split("%")
+                                    acc = [float(x) / 100, float(y) / 100, float(z) / 100]
+                                    logging.info(acc)
+                                    self.socket_broadcast({"updateAccel": acc})
+                                elif msg[0] == "G":
+                                    x, y, z = msg[1:-1].split("%")
+                                    gir = [float(x) / 100, float(y) / 100, float(z) / 100]
+                                    logging.info(gir)
+                                    self.socket_broadcast({"updateGyro": gir})
+                                elif msg[0] == "M":
+                                    x, y, z = msg[1:-1].split("%")
+                                    magn = [float(x) / 100, float(y) / 100, float(z) / 100]
+                                    logging.info(magn)
+                                    self.socket_broadcast({"updateMagn": magn})
+                                elif msg[0] == "B":
+                                    batt = float(msg[1:-1]) / 100
+                                    logging.info(batt)
+                                    self.socket_broadcast({"updateBatt": batt})
+                                elif msg[0] == "T":
+                                    temp = float(msg[1:-1]) / 100
+                                    self.socket_broadcast({"updateCpuTemp": temp})
+                                else:
+                                    logging.warning("Unknown message: " + msg)
+                        elif (time.time() - start_time) >= 5000:
+                            logging.info("No answer from " + port.name)
+                            self.serialPort.close()
+                            self.serialPort = None
             except:
                 logging.error("Unexpected error, Arduino is now disconnected!")
                 if self.serialPort is not None:
@@ -298,15 +302,13 @@ class RoverServer:
 
     def move(self, speed):
         logging.info(f"Movimento con velocità: {str(speed)}")
-        self.serial_println(f">M{str(int(speed * 100))}%")
-        # self.send({"move": speed})
+        self.serial_println(f">T{str(int(speed))}%")
 
     def moveRotate(self, moveRotateVect):
         speed = moveRotateVect[0]  # Cambiare speed (ovunque) con metri
         deg_per_min = moveRotateVect[1]
         logging.info(f"Movimento con velocità {str(speed)} e rotazione {str(deg_per_min)}")
         self.serial_println(f">W{str(int(speed * 100))}%{str(int(deg_per_min * 100))}%")
-        # self.send({"moveRotate": [speed, deg_per_min]})
 
     def moveToStop(self):
         logging.info("Movimento fino a stop")
@@ -329,27 +331,11 @@ class RoverServer:
     def rotate(self, angle):
         logging.info(f"Rotazione di {str(angle)}")
         self.serial_println(f">A{str(int(angle * 100))}%")
-        # self.send({"rotate": angle})
 
     def stop(self):
         logging.info("Stop rover")
         self.serial_println(">S")
-        # self.send({"stop": True})
 
-
-# thread di aggiornamento sensori
-
-# def updateAll(self):
-#     batt = 100
-#     acc = [0, 0, 0]
-#     while True:
-#         acc = [random.gauss(2, 3) for i in range(3)]
-#         batt -= round(random.random(), 2) * 0.1
-#         if batt < 0:
-#             batt = 0
-#         self.send({"updateBatt": batt})
-#         self.send({"updateAccel": acc})
-#         time.sleep(0.2)
 
 ######################### MAIN #########################
 

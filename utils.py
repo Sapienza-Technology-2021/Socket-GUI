@@ -5,6 +5,7 @@ import threading
 
 APP_NAME = "Tech Team Rover"
 PORT = 12345
+ROVER_UUID = "4b7caa5d-2634-44f3-ad62-5ffb1e08d73f"
 
 
 def init_logger():
