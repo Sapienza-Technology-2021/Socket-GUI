@@ -1,5 +1,3 @@
-######################### IMPORT #########################
-
 import inspect
 import os
 import sys
@@ -11,10 +9,9 @@ from utils import APP_NAME, PORT
 from roverclient import RoverClient
 
 
-######################### CODE #########################
+######################### USER INTERFACE CLASS #########################
 
 class RoverUi(QtWidgets.QMainWindow):
-    ######################### INIT-ROVERUI #########################
     def __init__(self):
         super(RoverUi, self).__init__()
         uic.loadUi('GUI/form.ui', self)

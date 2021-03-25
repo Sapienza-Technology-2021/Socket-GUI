@@ -1,5 +1,3 @@
-######################### IMPORT #########################
-
 import json
 import logging
 import socket
@@ -11,11 +9,10 @@ from utils import check_load_json, PORT, InterruptableEvent, init_logger
 init_logger()
 
 
-######################### CODE #########################
+######################### CLIENT CLASS #########################
 
 class RoverClient:
 
-    ######################### INIT-ROVERCLIENT #########################
     def __init__(self):
         self.connected = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -47,9 +44,9 @@ class RoverClient:
             self.discover_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.discover_socket.bind(("", 12346))
             self.discover_socket.settimeout(1)
-            logging.info("ACK SERVER in ascolto")
+            logging.info("Ack server init")
         except:
-            logging.error("Errore di inizializzazione acknowledgment server")
+            logging.error("Ack server init error")
             time.sleep(0.2)
             self.scan()
         while self.scan_run and not self.connected:
@@ -60,12 +57,12 @@ class RoverClient:
                 response, addr = self.discover_socket.recvfrom(1024)
                 if response == b"ack":
                     self.server_ip = addr[0]
-                    logging.info("Server trovato: ", self.server_ip)
+                    logging.info("Server found: " + self.server_ip)
                     self.connect(self.server_ip, PORT)
             except socket.timeout:
                 pass
             except:
-                logging.error("Errore riscontrato nell'invio di pacchetti broadcast")
+                logging.error("Broadcast send error")
                 time.sleep(1)
         logging.info("Scan stopped")
 
@@ -137,13 +134,13 @@ class RoverClient:
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((ip, port))
-            logging.info("Connesso al server: ", ip)
+            logging.info("Connected to server " + ip)
             self.connected = True
             threading.Thread(target=self.serverHandler, args=(), daemon=True).start()
             self.sock.send(b"<PING>\n")
             return True
         except:
-            logging.error("Errore riscontrato in fase di connessione")
+            logging.error("Connection error")
             self.connected = False
             return False
 
@@ -176,7 +173,7 @@ class RoverClient:
 
 
 ######################### MAIN #########################
-# Debug
+
 if __name__ == "__main__":
     client = RoverClient()
     event = InterruptableEvent()
