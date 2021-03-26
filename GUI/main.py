@@ -2,11 +2,14 @@ import inspect
 import os
 import sys
 
+from PyQt5.QtCore import Qt
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
 from PyQt5 import QtWidgets, QtGui, uic
 from PyQt5.QtWidgets import QMessageBox
 from utils import APP_NAME, PORT
 from roverclient import RoverClient
+from pyqtgraph import PlotWidget, mkPen
 
 
 ######################### USER INTERFACE CLASS #########################
@@ -19,7 +22,7 @@ class RoverUi(QtWidgets.QMainWindow):
         self.roverClient.set_client_controller(self)
         self.roverClient.register_functions(
             ["updateAccel", "updateGyro", "updateMagn",
-             "updateIrDistance", "updateBatt", "updateCpuTemp",
+             "updateDistance", "updateBatt", "updateCpuTemp",
              "updateRPMFeedback", "setMLEnabled"])
         self.setWindowIcon(QtGui.QIcon('res/icon.png'))
         self.setWindowTitle(APP_NAME)
@@ -35,6 +38,12 @@ class RoverUi(QtWidgets.QMainWindow):
         self.moveStop.clicked.connect(self.moveStopListener)
         self.enableMLBox.stateChanged.connect(self.sendSetMLEnabled)
         self.tabWidget.setCurrentIndex(0)
+        self.graphWidget = PlotWidget()
+        self.accelLayout.addWidget(self.graphWidget)
+        hour = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        temperature = [30, 32, 34, 32, 33, 31, 29, 32, 35, 45]
+        self.graphWidget.setBackground('w')
+        self.graphWidget.plot(hour, temperature, pen=mkPen(color=(255, 0, 0)))
         self.enableComponents(False)
         self.show()
 
@@ -42,6 +51,21 @@ class RoverUi(QtWidgets.QMainWindow):
         self.enableComponents(False)
         self.ipField.setEnabled(True)
         self.connectButton.setText("Connetti")
+
+    def closeEvent(self, event):
+        if self.roverClient.isConnected():
+            reply = QMessageBox.question(self, APP_NAME, "Are you sure you want to quit?",
+                                         QMessageBox.Close | QMessageBox.Cancel)
+            if reply == QMessageBox.Close:
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.accept()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
 
     # Button listeners
 
@@ -124,7 +148,7 @@ class RoverUi(QtWidgets.QMainWindow):
         self.magnYNumber.display("{:.2f}".format(xyz[1]))
         self.magnZNumber.display("{:.2f}".format(xyz[2]))
 
-    def updateIrDistance(self, dist1, dist2):
+    def updateDistance(self, dist1, dist2):
         self.irSxDistNumber.display("{:.2f}".format(dist1))
         self.irDxDistNumber.display("{:.2f}".format(dist2))
 

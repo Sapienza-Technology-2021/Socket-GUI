@@ -16,7 +16,8 @@
 - `python3.9`, [Download](https://www.python.org/)
   - Deve essere impostato nella variabile d'ambiente PATH
 - `PyQt5`, [pip3 install PyQt5](https://pypi.org/project/PyQt5/)
-- `serial`, [pip3 install pyserial](https://pyserial.readthedocs.io/en/latest/pyserial_api.html)
+- `pyserial`, [pip3 install pyserial](https://pyserial.readthedocs.io/en/latest/pyserial_api.html)
+- `pyqtgraph`, [pip3 install pyqtgraph](https://pyqtgraph.readthedocs.io/en/latest/)
 
 ## Esecuzione
 

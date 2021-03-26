@@ -15,6 +15,11 @@ from serial.tools.list_ports import comports as list_serial_ports
 init_logger()
 
 
+def get_array_from_message(msg):
+    x, y, z = msg[1:-1].split("%")
+    return [float(x), float(y), float(z)]
+
+
 ######################### CONNECTION UTILITY CLASS #########################
 
 class ClientConnection:
@@ -120,27 +125,29 @@ class RoverServer:
                                 elif msg[0] == "L":
                                     logging.info("Serial log: " + msg)
                                 elif msg[0] == "A":
-                                    x, y, z = msg[1:-1].split("%")
-                                    acc = [float(x) / 100, float(y) / 100, float(z) / 100]
-                                    logging.info(acc)
-                                    self.socket_broadcast({"updateAccel": acc})
+                                    array = get_array_from_message(msg)
+                                    logging.info("Accelerometer data " + str(array))
+                                    self.socket_broadcast({"updateAccel": array})
                                 elif msg[0] == "G":
-                                    x, y, z = msg[1:-1].split("%")
-                                    gir = [float(x) / 100, float(y) / 100, float(z) / 100]
-                                    logging.info(gir)
-                                    self.socket_broadcast({"updateGyro": gir})
+                                    array = get_array_from_message(msg)
+                                    logging.info("Gyroscope data " + str(array))
+                                    self.socket_broadcast({"updateGyro": array})
                                 elif msg[0] == "M":
-                                    x, y, z = msg[1:-1].split("%")
-                                    magn = [float(x) / 100, float(y) / 100, float(z) / 100]
-                                    logging.info(magn)
-                                    self.socket_broadcast({"updateMagn": magn})
+                                    array = get_array_from_message(msg)
+                                    logging.info("Magnetometer data " + str(array))
+                                    self.socket_broadcast({"updateMagn": array})
                                 elif msg[0] == "B":
-                                    batt = float(msg[1:-1]) / 100
-                                    logging.info(batt)
-                                    self.socket_broadcast({"updateBatt": batt})
+                                    battery = float(msg[1:-1])
+                                    logging.info("Battery level: " + str(battery))
+                                    self.socket_broadcast({"updateBatt": battery})
                                 elif msg[0] == "T":
-                                    temp = float(msg[1:-1]) / 100
-                                    self.socket_broadcast({"updateCpuTemp": temp})
+                                    temp = float(msg[1:-1])
+                                    logging.info("IMU temperature: " + str(temp))
+                                    self.socket_broadcast({"updateIMUTemp": temp})
+                                elif msg[0] == "D":
+                                    dist = float(msg[1:-1])
+                                    logging.info("Distance: " + str(dist))
+                                    self.socket_broadcast({"updateDistance": dist})
                                 else:
                                     logging.warning("Unknown message: " + msg)
                         elif (time.time() - start_time) >= 5000:
