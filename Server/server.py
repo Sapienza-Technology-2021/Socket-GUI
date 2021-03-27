@@ -55,6 +55,7 @@ class RoverServer:
         self.serialPort = None
         self.serialConnected = False
         self.machine_learning_en = False
+        self.motor_power_on = False
         self.port = port
         self.data = {}
         self.conns = {}
@@ -114,8 +115,10 @@ class RoverServer:
                             logging.info("Board replied \"" + response + "\"")
                         if response[1:] == ROVER_UUID:
                             logging.info(port.device + " connected.")
-                            # TODO(Marco): solo per provare, avvia forzatamente i motori e imposta una velocità
-                            self.serial_println(">E1")
+                            self.serial_println(">E0")  # Motors OFF
+                            self.motor_power_on = False
+                            self.socket_broadcast({"setMotorsPowered": self.motor_power_on})
+                            # TODO(Marco): velocità solo per provare
                             self.serial_println(">V200")
                             self.serialConnected = True
                             while self.running:
@@ -139,7 +142,7 @@ class RoverServer:
                                 elif msg[0] == "B":
                                     battery = float(msg[1:-1])
                                     logging.info("Battery level: " + str(battery))
-                                    self.socket_broadcast({"updateBatt": battery})
+                                    self.socket_broadcast({"updateBattery": battery})
                                 elif msg[0] == "T":
                                     temp = float(msg[1:-1])
                                     logging.info("IMU temperature: " + str(temp))
@@ -189,6 +192,7 @@ class RoverServer:
                         thread.start()
                         self.conns[conn] = thread
                         conn.send(b"<PING>\n")
+                        conn.send((json.dumps({"setMotorsPowered": self.motor_power_on}) + "\n").encode())
                         logging.info("Threads count: " + str(len(self.conns)))
                     else:
                         logging.warning("Max clients count!")
@@ -217,9 +221,11 @@ class RoverServer:
         self.socket.close()
 
     def parse(self, data):
+        logging.info("Socket message received: " + data)
         try:
             loaded = check_load_json(data)
-            commands = ["move", "moveRotate", "rotate", "stop", "setMLEnabled"]
+            commands = ["move", "setSpeed", "moveRotate", "rotate", "stop", "setMLEnabled",
+                        "setMotorsPowered", "moveTime"]
             if loaded is None:
                 return
             for item in commands:
@@ -307,9 +313,13 @@ class RoverServer:
         self.machine_learning_en = val
         self.socket_broadcast({"setMLEnabled": self.machine_learning_en})
 
-    def move(self, speed):
-        logging.info(f"Movimento con velocità: {str(speed)}")
-        self.serial_println(f">T{str(int(speed))}%")
+    def moveTime(self, time):
+        logging.info(f"Movimento sostenuto per: {str(time)} secondi")
+        self.serial_println(f">T{str(int(time))}%")
+
+    def move(self, dist):
+        logging.info(f"Movimento per {str(dist)} metri")
+        self.serial_println(f">M{str(int(dist))}%")
 
     def moveRotate(self, moveRotateVect):
         speed = moveRotateVect[0]  # Cambiare speed (ovunque) con metri
@@ -342,6 +352,15 @@ class RoverServer:
     def stop(self):
         logging.info("Stop rover")
         self.serial_println(">S")
+
+    def setMotorsPowered(self, val):
+        self.motor_power_on = val
+        if self.motor_power_on:
+            logging.info("Motors powered up")
+        else:
+            logging.info("Motors powered down")
+        self.serial_println(">E" + str(int(val)))
+        self.socket_broadcast({"setMotorsPowered": self.motor_power_on})
 
 
 ######################### MAIN #########################

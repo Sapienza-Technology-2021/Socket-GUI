@@ -22,8 +22,8 @@ class RoverUi(QtWidgets.QMainWindow):
         self.roverClient.set_client_controller(self)
         self.roverClient.register_functions(
             ["updateAccel", "updateGyro", "updateMagn",
-             "updateDistance", "updateBatt", "updateCpuTemp",
-             "updateRPMFeedback", "setMLEnabled"])
+             "updateDistance", "updateBattery", "updateCpuTemp",
+             "updateRPMFeedback", "setMLEnabled", "setMotorsPowered"])
         self.setWindowIcon(QtGui.QIcon('res/icon.png'))
         self.setWindowTitle(APP_NAME)
         self.connectButton.clicked.connect(self.connectBtnListener)
@@ -37,6 +37,7 @@ class RoverUi(QtWidgets.QMainWindow):
         self.moveDownRight.clicked.connect(self.moveDownRightListener)
         self.moveStop.clicked.connect(self.moveStopListener)
         self.enableMLBox.stateChanged.connect(self.sendSetMLEnabled)
+        self.motorPowerBox.stateChanged.connect(self.motorPowerBoxListener)
         self.tabWidget.setCurrentIndex(0)
 
         self.graphWidget = PlotWidget()
@@ -123,12 +124,16 @@ class RoverUi(QtWidgets.QMainWindow):
         self.speedSlider.setEnabled(b)
         self.rotSpeedSlider.setEnabled(b)
         self.degPerClickSlider.setEnabled(b)
+        self.motorPowerBox.setEnabled(b)
+
+    def motorPowerBoxListener(self):
+        self.roverClient.setMotorsPowered(self.motorPowerBox.isChecked())
 
     def moveUpListener(self):
-        self.roverClient.move(self.speedSlider.value())
+        self.roverClient.moveTime(3000)
 
     def moveDownListener(self):
-        self.roverClient.move(-self.speedSlider.value())
+        self.roverClient.moveTime(-3000)
 
     def rotCCWListener(self):
         self.roverClient.rotate(-self.degPerClickSlider.value())
@@ -175,11 +180,11 @@ class RoverUi(QtWidgets.QMainWindow):
         self.magnYNumber.display("{:.2f}".format(xyz[1]))
         self.magnZNumber.display("{:.2f}".format(xyz[2]))
 
-    def updateDistance(self, dist1, dist2):
+    def updateDistance(self, dist1):
         self.irSxDistNumber.display("{:.2f}".format(dist1))
-        self.irDxDistNumber.display("{:.2f}".format(dist2))
+        # self.irDxDistNumber.display("{:.2f}".format(dist2))
 
-    def updateBatt(self, val):
+    def updateBattery(self, val):
         self.batteryNumber.display("{:.1f}".format(val))
 
     def updateCpuTemp(self, val):
@@ -190,6 +195,9 @@ class RoverUi(QtWidgets.QMainWindow):
 
     def setMLEnabled(self, val):
         self.enableMLBox.setChecked(val)
+
+    def setMotorsPowered(self, val):
+        self.motorPowerBox.setChecked(val)
 
 
 ######################### MAIN #########################

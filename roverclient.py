@@ -136,7 +136,7 @@ class RoverClient:
             self.sock.connect((ip, port))
             logging.info("Connected to server " + ip)
             self.connected = True
-            threading.Thread(target=self.serverHandler, args=(), daemon=True).start()
+            threading.Thread(target=self.serverHandler, args=(), name="Client thread", daemon=True).start()
             self.sock.send(b"<PING>\n")
             return True
         except:
@@ -156,8 +156,14 @@ class RoverClient:
 
     ######################### DEF-ROVER #########################
 
-    def move(self, speed):
-        self.send({"move": speed})
+    def moveTime(self, time):
+        self.send({"moveTime": time})
+
+    def move(self, dist):
+        self.send({"move": dist})
+
+    def setSpeed(self, speed):
+        self.send({"setSpeed": speed})
 
     def moveRotate(self, speed, degPerMin):
         self.send({"moveRotate": [speed, degPerMin]})
@@ -170,6 +176,9 @@ class RoverClient:
 
     def setMLEnabled(self, val):
         self.send({"setMLEnabled": val})
+
+    def setMotorsPowered(self, val):
+        self.send({"setMotorsPowered": val})
 
 
 ######################### MAIN #########################
