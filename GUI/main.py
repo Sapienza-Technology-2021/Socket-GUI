@@ -9,7 +9,7 @@ from PyQt5 import QtWidgets, QtGui, uic
 from PyQt5.QtWidgets import QMessageBox
 from utils import APP_NAME, PORT
 from roverclient import RoverClient
-from pyqtgraph import PlotWidget, mkPen
+from pyqtgraph import mkPen
 
 
 ######################### USER INTERFACE CLASS #########################
@@ -21,8 +21,7 @@ class RoverUi(QtWidgets.QMainWindow):
         self.roverClient = RoverClient()
         self.roverClient.set_client_controller(self)
         self.roverClient.register_functions(
-            ["updateAccel", "updateGyro", "updateMagn",
-             "updateDistance", "updateBattery", "updateCpuTemp",
+            ["updateAccel", "updateDistance", "updateBattery", "updateCpuTemp",
              "updateRPMFeedback", "setMLEnabled", "setMotorsPowered"])
         self.setWindowIcon(QtGui.QIcon('res/icon.png'))
         self.setWindowTitle(APP_NAME)
@@ -39,12 +38,10 @@ class RoverUi(QtWidgets.QMainWindow):
         self.enableMLBox.stateChanged.connect(self.sendSetMLEnabled)
         self.motorPowerBox.stateChanged.connect(self.motorPowerBoxListener)
         self.tabWidget.setCurrentIndex(0)
-        self.graphWidget = PlotWidget()
-        self.accelLayout.addWidget(self.graphWidget)
         hour = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         temperature = [30, 32, 34, 32, 33, 31, 29, 32, 35, 45]
-        self.graphWidget.setBackground('w')
-        self.graphWidget.plot(hour, temperature, pen=mkPen(color=(255, 0, 0)))
+        self.accel_graph.setBackground('w')
+        self.accel_graph.plot(hour, temperature, pen=mkPen(color=(255, 0, 0)))
         self.enableComponents(False)
         self.show()
 
@@ -142,16 +139,6 @@ class RoverUi(QtWidgets.QMainWindow):
         self.accelXNumber.display("{:.2f}".format(xyz[0]))
         self.accelYNumber.display("{:.2f}".format(xyz[1]))
         self.accelZNumber.display("{:.2f}".format(xyz[2]))
-
-    def updateGyro(self, xyz):
-        self.gyroXNumber.display("{:.2f}".format(xyz[0]))
-        self.gyroYNumber.display("{:.2f}".format(xyz[1]))
-        self.gyroZNumber.display("{:.2f}".format(xyz[2]))
-
-    def updateMagn(self, xyz):
-        self.magnXNumber.display("{:.2f}".format(xyz[0]))
-        self.magnYNumber.display("{:.2f}".format(xyz[1]))
-        self.magnZNumber.display("{:.2f}".format(xyz[2]))
 
     def updateDistance(self, dist1):
         self.irSxDistNumber.display("{:.2f}".format(dist1))
