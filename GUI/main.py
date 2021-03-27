@@ -43,17 +43,14 @@ class RoverUi(QtWidgets.QMainWindow):
         self.accel_graph.setBackground('w')
         self.accel_graph.showGrid(x=True, y=True)
         self.accel_graph.setYRange(-50, 50, padding=0)
-
         self.accel_X = self.accel_graph.plot(self.x, self.accel_data[0], pen=mkPen(color=(255, 0, 0),  width=3))
         self.accel_Y = self.accel_graph.plot(self.x, self.accel_data[1], pen=mkPen(color=(0, 0, 255),  width=3))
-
-        self.enableComponents(False)
-        self.show()
-
         self.timer = QTimer()
         self.timer.setInterval(250)
         self.timer.timeout.connect(self.update_plot_data)
         self.timer.start()
+        self.enableComponents(False)
+        self.show()
 
     def update_plot_data(self):
         self.x = self.x[1:]  # Remove the first y element.
@@ -161,7 +158,7 @@ class RoverUi(QtWidgets.QMainWindow):
     # Controller interface methods
     def updateAccel(self, xyz):
         #funzione che aggiunge i dati ad una lista e plotta
-        update_plot_data(self, xyz, self.accel_data)
+        #update_plot_data(self, xyz, self.accel_data)
         self.accelXNumber.display("{:.2f}".format(xyz[0]))
         self.accelYNumber.display("{:.2f}".format(xyz[1]))
         self.accelZNumber.display("{:.2f}".format(xyz[2]))
