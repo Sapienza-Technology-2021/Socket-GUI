@@ -22,12 +22,15 @@
 
 ## Client > rover
 
-- `move: speed`
-  - _Movimento avanti continuo fino a stop_
-  - `speed`: PWM (0-255), intero
-- `moveRotate: [speed, degPerMin]`
-  - _Movimento combinato continuo fino a stop_
-  - `speed`: PWM (0-255), intero, negativo per indietro
+- `move: dist`
+  - _Movimento avanti con distanza_
+  - `dist`: in metri
+- `moveTime: ms`
+  - Muoviti per tot millisecondi
+- `setSpeed: speed`
+  - `speed`: metri al secondo
+- `moveRotate: [dist, degPerMin]`
+  - `dist`: distanza in metri
   - `degPerMin`: gradi al minuto di rotazione (velocità), intero, negativo per antiorario
 - `rotate: angle`
   - _Rotazione del rover su se stesso_
