@@ -2,7 +2,7 @@ import inspect
 import os
 import sys
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
 from PyQt5 import QtWidgets, QtGui, uic
@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QMessageBox
 from utils import APP_NAME, PORT
 from roverclient import RoverClient
 from pyqtgraph import mkPen
-
+from random import randint
 
 ######################### USER INTERFACE CLASS #########################
 
@@ -38,12 +38,36 @@ class RoverUi(QtWidgets.QMainWindow):
         self.enableMLBox.stateChanged.connect(self.sendSetMLEnabled)
         self.motorPowerBox.stateChanged.connect(self.motorPowerBoxListener)
         self.tabWidget.setCurrentIndex(0)
-        hour = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        temperature = [30, 32, 34, 32, 33, 31, 29, 32, 35, 45]
+        self.x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        self.accel_data = [[0]*10, [0]*10, [0]*10]
         self.accel_graph.setBackground('w')
-        self.accel_graph.plot(hour, temperature, pen=mkPen(color=(255, 0, 0)))
+        self.accel_graph.showGrid(x=True, y=True)
+        self.accel_graph.setYRange(-50, 50, padding=0)
+
+        self.accel_X = self.accel_graph.plot(self.x, self.accel_data[0], pen=mkPen(color=(255, 0, 0),  width=3))
+        self.accel_Y = self.accel_graph.plot(self.x, self.accel_data[1], pen=mkPen(color=(0, 0, 255),  width=3))
+
         self.enableComponents(False)
         self.show()
+
+        self.timer = QTimer()
+        self.timer.setInterval(250)
+        self.timer.timeout.connect(self.update_plot_data)
+        self.timer.start()
+
+    def update_plot_data(self):
+        self.x = self.x[1:]  # Remove the first y element.
+        self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last.
+        data = self.accel_data
+
+        data = [data[0][1:], data[1][1:], data[2][1:]]  # Remove the first
+        data[0].append(randint(-50,50))
+        data[1].append(randint(-50,50))
+        data[2].append(randint(-50,50)) #da sostituire con i veri dati
+        #print(data)
+        self.accel_data = data
+        self.accel_X.setData(self.x, data[0])  # Update the data.
+        self.accel_Y.setData(self.x, data[1])
 
     def on_disconnection(self):
         self.enableComponents(False)
@@ -136,6 +160,8 @@ class RoverUi(QtWidgets.QMainWindow):
 
     # Controller interface methods
     def updateAccel(self, xyz):
+        #funzione che aggiunge i dati ad una lista e plotta
+        update_plot_data(self, xyz, self.accel_data)
         self.accelXNumber.display("{:.2f}".format(xyz[0]))
         self.accelYNumber.display("{:.2f}".format(xyz[1]))
         self.accelZNumber.display("{:.2f}".format(xyz[2]))
