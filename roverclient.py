@@ -136,7 +136,7 @@ class RoverClient:
             self.sock.connect((ip, port))
             logging.info("Connected to server " + ip)
             self.connected = True
-            threading.Thread(target=self.serverHandler, args=(), daemon=True).start()
+            threading.Thread(target=self.serverHandler, args=(), name="Client thread", daemon=True).start()
             self.sock.send(b"<PING>\n")
             return True
         except:
@@ -170,6 +170,9 @@ class RoverClient:
 
     def setMLEnabled(self, val):
         self.send({"setMLEnabled": val})
+
+    def setMotorsPowered(self, val):
+        self.send({"setMotorsPowered": val})
 
 
 ######################### MAIN #########################
