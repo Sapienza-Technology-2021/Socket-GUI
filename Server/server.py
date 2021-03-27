@@ -224,7 +224,7 @@ class RoverServer:
         logging.info("Socket message received: " + data)
         try:
             loaded = check_load_json(data)
-            commands = ["move", "moveRotate", "rotate", "stop", "setMLEnabled", "setMotorsPowered"]
+            commands = ["move", "setSpeed","moveRotate", "rotate", "stop", "setMLEnabled", "setMotorsPowered"]
             if loaded is None:
                 return
             for item in commands:
@@ -312,9 +312,10 @@ class RoverServer:
         self.machine_learning_en = val
         self.socket_broadcast({"setMLEnabled": self.machine_learning_en})
 
-    def move(self, speed):
-        logging.info(f"Movimento con velocità: {str(speed)}")
-        self.serial_println(f">T{str(int(speed))}%")
+    def move(self, time):
+        time = 3000
+        logging.info(f"Movimento sostenuto per: {str(time)} secondi")
+        self.serial_println(f">T{str(int(time))}%")
 
     def moveRotate(self, moveRotateVect):
         speed = moveRotateVect[0]  # Cambiare speed (ovunque) con metri
