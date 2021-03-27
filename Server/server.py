@@ -142,7 +142,7 @@ class RoverServer:
                                 elif msg[0] == "B":
                                     battery = float(msg[1:-1])
                                     logging.info("Battery level: " + str(battery))
-                                    self.socket_broadcast({"updateBatt": battery})
+                                    self.socket_broadcast({"updateBattery": battery})
                                 elif msg[0] == "T":
                                     temp = float(msg[1:-1])
                                     logging.info("IMU temperature: " + str(temp))
@@ -224,7 +224,8 @@ class RoverServer:
         logging.info("Socket message received: " + data)
         try:
             loaded = check_load_json(data)
-            commands = ["move", "setSpeed","moveRotate", "rotate", "stop", "setMLEnabled", "setMotorsPowered"]
+            commands = ["move", "setSpeed", "moveRotate", "rotate", "stop", "setMLEnabled",
+                        "setMotorsPowered", "moveTime"]
             if loaded is None:
                 return
             for item in commands:
@@ -312,10 +313,13 @@ class RoverServer:
         self.machine_learning_en = val
         self.socket_broadcast({"setMLEnabled": self.machine_learning_en})
 
-    def move(self, time):
-        time = 3000
+    def moveTime(self, time):
         logging.info(f"Movimento sostenuto per: {str(time)} secondi")
         self.serial_println(f">T{str(int(time))}%")
+
+    def move(self, dist):
+        logging.info(f"Movimento per {str(dist)} metri")
+        self.serial_println(f">M{str(int(dist))}%")
 
     def moveRotate(self, moveRotateVect):
         speed = moveRotateVect[0]  # Cambiare speed (ovunque) con metri

@@ -22,7 +22,7 @@ class RoverUi(QtWidgets.QMainWindow):
         self.roverClient.set_client_controller(self)
         self.roverClient.register_functions(
             ["updateAccel", "updateGyro", "updateMagn",
-             "updateDistance", "updateBatt", "updateCpuTemp",
+             "updateDistance", "updateBattery", "updateCpuTemp",
              "updateRPMFeedback", "setMLEnabled", "setMotorsPowered"])
         self.setWindowIcon(QtGui.QIcon('res/icon.png'))
         self.setWindowTitle(APP_NAME)
@@ -105,10 +105,10 @@ class RoverUi(QtWidgets.QMainWindow):
         self.roverClient.setMotorsPowered(self.motorPowerBox.isChecked())
 
     def moveUpListener(self):
-        self.roverClient.move(self.speedSlider.value())
+        self.roverClient.moveTime(3000)
 
     def moveDownListener(self):
-        self.roverClient.move(-self.speedSlider.value())
+        self.roverClient.moveTime(-3000)
 
     def rotCCWListener(self):
         self.roverClient.rotate(-self.degPerClickSlider.value())
@@ -157,7 +157,7 @@ class RoverUi(QtWidgets.QMainWindow):
         self.irSxDistNumber.display("{:.2f}".format(dist1))
         # self.irDxDistNumber.display("{:.2f}".format(dist2))
 
-    def updateBatt(self, val):
+    def updateBattery(self, val):
         self.batteryNumber.display("{:.1f}".format(val))
 
     def updateCpuTemp(self, val):
