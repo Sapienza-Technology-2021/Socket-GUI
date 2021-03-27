@@ -156,8 +156,11 @@ class RoverClient:
 
     ######################### DEF-ROVER #########################
 
-    def move(self, speed):
-        self.send({"move": speed})
+    def move(self, time):
+        self.send({"move": time})
+    
+    def setSpeed(self, speed):
+        self.send({"setSpeed": speed})
 
     def moveRotate(self, speed, degPerMin):
         self.send({"moveRotate": [speed, degPerMin]})
