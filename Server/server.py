@@ -136,9 +136,10 @@ class RoverServer:
                                     logging.info("Gyroscope data " + str(array))
                                     self.socket_broadcast({"updateGyro": array})
                                 elif msg[0] == "M":
-                                    array = get_array_from_message(msg)
-                                    logging.info("Magnetometer data " + str(array))
-                                    self.socket_broadcast({"updateMagn": array})
+                                    current, target = msg[1:-1].split("%")
+                                    array = [float(current), float(target)]
+                                    logging.info("Compass data " + str(array))
+                                    self.socket_broadcast({"updateCompass": array})
                                 elif msg[0] == "B":
                                     battery = float(msg[1:-1])
                                     logging.info("Battery level: " + str(battery))

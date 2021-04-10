@@ -2,7 +2,7 @@ import inspect
 import os
 import sys
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
 from PyQt5 import QtWidgets, QtGui, uic
@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QMessageBox
 from utils import APP_NAME, PORT
 from roverclient import RoverClient
 from pyqtgraph import mkPen
-from random import randint
+
 
 ######################### USER INTERFACE CLASS #########################
 
@@ -23,7 +23,7 @@ class RoverUi(QtWidgets.QMainWindow):
         self.roverClient.set_client_controller(self)
         self.roverClient.register_functions(
             ["updateAccel", "updateDistance", "updateBattery", "updateCpuTemp",
-             "updateRPMFeedback", "setMLEnabled", "setMotorsPowered"])
+             "updateRPMFeedback", "setMLEnabled", "setMotorsPowered", "updateCompass"])
         self.setWindowIcon(QtGui.QIcon('res/icon.png'))
         self.setWindowTitle(APP_NAME)
         self.connectButton.clicked.connect(self.connectBtnListener)
@@ -39,33 +39,28 @@ class RoverUi(QtWidgets.QMainWindow):
         self.enableMLBox.stateChanged.connect(self.sendSetMLEnabled)
         self.motorPowerBox.stateChanged.connect(self.motorPowerBoxListener)
         self.tabWidget.setCurrentIndex(0)
-        self.x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        self.accel_data = [[0]*10, [0]*10, [0]*10]
+        self.accel_time_axis = []
+        self.compass_time_axis = []
+        self.accel_data = [[], [], []]
+        self.compass_data = [[], []]
         self.accel_graph.setBackground('w')
         self.accel_graph.showGrid(x=True, y=True)
-        self.accel_graph.setYRange(-50, 50, padding=0)
-        self.accel_X = self.accel_graph.plot(self.x, self.accel_data[0], pen=mkPen(color=(255, 0, 0),  width=3))
-        self.accel_Y = self.accel_graph.plot(self.x, self.accel_data[1], pen=mkPen(color=(0, 0, 255),  width=3))
-        self.timer = QTimer()
-        self.timer.setInterval(250)
-        self.timer.timeout.connect(self.update_plot_data)
-        self.timer.start()
+        self.accel_graph.setYRange(-12, 12, padding=0)
+        self.compass_graph.setBackground('w')
+        self.compass_graph.showGrid(x=True, y=True)
+        self.compass_graph.setYRange(-180, 180, padding=0)
+        self.accel_X = self.accel_graph.plot(self.accel_time_axis, self.accel_data[0],
+                                             pen=mkPen(color=(255, 0, 0), width=3))
+        self.accel_Y = self.accel_graph.plot(self.accel_time_axis, self.accel_data[1],
+                                             pen=mkPen(color=(0, 0, 255), width=3))
+        self.accel_Z = self.accel_graph.plot(self.accel_time_axis, self.accel_data[2],
+                                             pen=mkPen(color=(0, 255, 0), width=3))
+        self.compass_current = self.compass_graph.plot(self.compass_time_axis, self.compass_data[0],
+                                                       pen=mkPen(color=(0, 0, 255), width=3))
+        self.compass_target = self.compass_graph.plot(self.compass_time_axis, self.compass_data[1],
+                                                      pen=mkPen(color=(255, 0, 0), width=3))
         self.enableComponents(False)
         self.show()
-
-    def update_plot_data(self):
-        self.x = self.x[1:]  # Remove the first y element.
-        self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last.
-        data = self.accel_data
-
-        data = [data[0][1:], data[1][1:], data[2][1:]]  # Remove the first
-        data[0].append(randint(-50,50))
-        data[1].append(randint(-50,50))
-        data[2].append(randint(-50,50)) #da sostituire con i veri dati
-        #print(data)
-        self.accel_data = data
-        self.accel_X.setData(self.x, data[0])  # Update the data.
-        self.accel_Y.setData(self.x, data[1])
 
     def on_disconnection(self):
         self.enableComponents(False)
@@ -156,13 +151,29 @@ class RoverUi(QtWidgets.QMainWindow):
         else:
             self.roverClient.setMLEnabled(False)
 
-    # Controller interface methods
+    ######################### CONTROLLER INTERFACE CLASS #########################
+
     def updateAccel(self, xyz):
-        #funzione che aggiunge i dati ad una lista e plotta
-        #update_plot_data(self, xyz, self.accel_data)
-        self.accelXNumber.display("{:.2f}".format(xyz[0]))
-        self.accelYNumber.display("{:.2f}".format(xyz[1]))
-        self.accelZNumber.display("{:.2f}".format(xyz[2]))
+        if len(self.accel_time_axis) > 100:
+            self.accel_time_axis = self.accel_time_axis[1:]
+            self.accel_data = [self.accel_data[0][1:], self.accel_data[1][1:], self.accel_data[2][1:]]
+        self.accel_time_axis.append(self.accel_time_axis[-1] + 1)  # Add a new value on the t axis
+        self.accel_data[0].append(xyz[0])
+        self.accel_data[1].append(xyz[1])
+        self.accel_data[2].append(xyz[2])
+        self.accel_X.setData(self.accel_time_axis, self.accel_data[0])
+        self.accel_Y.setData(self.accel_time_axis, self.accel_data[1])
+        self.accel_Z.setData(self.accel_time_axis, self.accel_data[2])
+
+    def updateCompass(self, data):
+        if len(self.compass_time_axis) > 50:
+            self.compass_time_axis = self.compass_time_axis[1:]
+            self.compass_data = [self.compass_data[0][1:], self.compass_data[1][1:], self.compass_data[2][1:]]
+        self.compass_time_axis.append(self.compass_time_axis[-1] + 1)  # Add a new value on the t axis
+        self.compass_data[0].append(data[0])
+        self.compass_data[1].append(data[1])
+        self.compass_current.setData(self.compass_time_axis, data[0])
+        self.compass_target.setData(self.compass_time_axis, data[1])
 
     def updateDistance(self, dist1):
         self.irSxDistNumber.display("{:.2f}".format(dist1))

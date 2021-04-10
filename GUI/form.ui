@@ -892,6 +892,9 @@
         <item row="1" column="1" colspan="2">
          <widget class="PlotWidget" name="accel_graph" native="true"/>
         </item>
+        <item row="2" column="1" colspan="2">
+         <widget class="PlotWidget" name="compass_graph" native="true"/>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="mlTab">
