@@ -14,6 +14,7 @@ from random import randint
 
 ######################### USER INTERFACE CLASS #########################
 
+
 class RoverUi(QtWidgets.QMainWindow):
     def __init__(self):
         super(RoverUi, self).__init__()
