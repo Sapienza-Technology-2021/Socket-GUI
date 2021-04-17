@@ -46,19 +46,21 @@ class RoverUi(QtWidgets.QMainWindow):
         self.accel_graph.setBackground('w')
         self.accel_graph.showGrid(x=True, y=True)
         self.accel_graph.setYRange(-12, 12, padding=0)
+        self.accel_graph.addLegend()
         self.compass_graph.setBackground('w')
         self.compass_graph.showGrid(x=True, y=True)
         self.compass_graph.setYRange(-180, 180, padding=0)
+        self.compass_graph.addLegend()
         self.accel_X = self.accel_graph.plot(self.accel_time_axis, self.accel_data[0],
-                                             pen=mkPen(color=(255, 0, 0), width=3))
+                                             pen=mkPen(color=(213, 0, 0), width=2), name="Accel. X")
         self.accel_Y = self.accel_graph.plot(self.accel_time_axis, self.accel_data[1],
-                                             pen=mkPen(color=(0, 0, 255), width=3))
+                                             pen=mkPen(color=(41, 98, 255), width=2), name="Accel. Y")
         self.accel_Z = self.accel_graph.plot(self.accel_time_axis, self.accel_data[2],
-                                             pen=mkPen(color=(0, 255, 0), width=3))
+                                             pen=mkPen(color=(255, 171, 0), width=2), name="Accel. Z")
         self.compass_current = self.compass_graph.plot(self.compass_time_axis, self.compass_data[0],
-                                                       pen=mkPen(color=(0, 0, 255), width=3))
+                                                       pen=mkPen(color=(213, 0, 0), width=3), name="Compass")
         self.compass_target = self.compass_graph.plot(self.compass_time_axis, self.compass_data[1],
-                                                      pen=mkPen(color=(255, 0, 0), width=3))
+                                                      pen=mkPen(color=(41, 98, 255), width=3), name="Target")
         self.enableComponents(False)
         self.show()
 
@@ -154,10 +156,15 @@ class RoverUi(QtWidgets.QMainWindow):
     ######################### CONTROLLER INTERFACE CLASS #########################
 
     def updateAccel(self, xyz):
-        if len(self.accel_time_axis) > 100:
-            self.accel_time_axis = self.accel_time_axis[1:]
-            self.accel_data = [self.accel_data[0][1:], self.accel_data[1][1:], self.accel_data[2][1:]]
-        self.accel_time_axis.append(self.accel_time_axis[-1] + 1)  # Add a new value on the t axis
+        accel_count = len(self.accel_time_axis)
+        # Add a new value on the t axis
+        if accel_count > 0:
+            self.accel_time_axis.append(self.accel_time_axis[-1] + 1)
+            if accel_count > 40:
+                self.accel_time_axis = self.accel_time_axis[1:]
+                self.accel_data = [self.accel_data[0][1:], self.accel_data[1][1:], self.accel_data[2][1:]]
+        else:
+            self.accel_time_axis.append(0)
         self.accel_data[0].append(xyz[0])
         self.accel_data[1].append(xyz[1])
         self.accel_data[2].append(xyz[2])
@@ -166,14 +173,19 @@ class RoverUi(QtWidgets.QMainWindow):
         self.accel_Z.setData(self.accel_time_axis, self.accel_data[2])
 
     def updateCompass(self, data):
-        if len(self.compass_time_axis) > 50:
-            self.compass_time_axis = self.compass_time_axis[1:]
-            self.compass_data = [self.compass_data[0][1:], self.compass_data[1][1:], self.compass_data[2][1:]]
-        self.compass_time_axis.append(self.compass_time_axis[-1] + 1)  # Add a new value on the t axis
+        compass_count = len(self.compass_time_axis)
+        # Add a new value on the t axis
+        if compass_count > 0:
+            self.compass_time_axis.append(self.accel_time_axis[-1] + 1)
+            if compass_count > 30:
+                self.compass_time_axis = self.accel_time_axis[1:]
+                self.compass_data = [self.compass_data[0][1:], self.compass_data[1][1:], self.compass_data[2][1:]]
+        else:
+            self.compass_time_axis.append(0)
         self.compass_data[0].append(data[0])
         self.compass_data[1].append(data[1])
-        self.compass_current.setData(self.compass_time_axis, data[0])
-        self.compass_target.setData(self.compass_time_axis, data[1])
+        self.compass_current.setData(self.compass_time_axis, self.compass_data[0])
+        self.compass_target.setData(self.compass_time_axis, self.compass_data[1])
 
     def updateDistance(self, dist1):
         self.irSxDistNumber.display("{:.2f}".format(dist1))

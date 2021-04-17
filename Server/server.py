@@ -116,15 +116,15 @@ class RoverServer:
                         response = self.serialPort.readline().decode("utf-8").replace("\n", "").replace("\r", "")
                         now = time.time()
                         if response == "":
-                            if (now - interval_time) >= 1.0:
-                                logging.info("Retrying serial ping")
-                                self.serialPort.write(">C\n".encode('utf-8'))
-                                interval_time = now
-                            elif (now - start_time) >= 10.0:
+                            if (now - start_time) >= 10.0:
                                 logging.info("No answer from " + port.name)
                                 self.serialPort.close()
                                 self.serialPort = None
                                 serial_retry = False
+                            elif (now - interval_time) >= 1.0:
+                                logging.info("Retrying serial ping")
+                                self.serialPort.write(">C\n".encode('utf-8'))
+                                interval_time = now
                         else:
                             logging.info("Board replied \"" + response + "\"")
                             if response[1:] == ROVER_UUID:
@@ -136,47 +136,54 @@ class RoverServer:
                                 self.serial_println(">V200")
                                 self.serialConnected = True
                                 while self.running:
-                                    msg = self.serial_read_line()
-                                    if msg is None:
-                                        time.sleep(0.3)
-                                    elif msg[0] == "L":
-                                        logging.info("Serial log: " + msg)
-                                    elif msg[0] == "A":
-                                        array = get_array_from_message(msg)
-                                        logging.info("Accelerometer data " + str(array))
-                                        self.socket_broadcast({"updateAccel": array})
-                                    elif msg[0] == "G":
-                                        array = get_array_from_message(msg)
-                                        logging.info("Gyroscope data " + str(array))
-                                        self.socket_broadcast({"updateGyro": array})
-                                    elif msg[0] == "M":
-                                        current, target = msg[1:-1].split("%")
-                                        array = [float(current), float(target)]
-                                        logging.info("Compass data " + str(array))
-                                        self.socket_broadcast({"updateCompass": array})
-                                    elif msg[0] == "B":
-                                        battery = float(msg[1:-1])
-                                        logging.info("Battery level: " + str(battery))
-                                        self.socket_broadcast({"updateBattery": battery})
-                                    elif msg[0] == "T":
-                                        temp = float(msg[1:-1])
-                                        logging.info("IMU temperature: " + str(temp))
-                                        self.socket_broadcast({"updateIMUTemp": temp})
-                                    elif msg[0] == "D":
-                                        dist = float(msg[1:-1])
-                                        logging.info("Distance: " + str(dist))
-                                        self.socket_broadcast({"updateDistance": dist})
-                                    else:
-                                        logging.warning("Unknown message: " + msg)
-                            elif (now - interval_time) >= 1.0:
-                                logging.info("Retrying serial ping")
-                                self.serialPort.write(">C\n".encode('utf-8'))
-                                interval_time = now
+                                    try:
+                                        msg = self.serial_read_line()
+                                        if msg is None:
+                                            time.sleep(0.3)
+                                        elif msg[0] == "L":
+                                            logging.info("Serial log: " + msg)
+                                        elif msg[0] == "A":
+                                            array = get_array_from_message(msg)
+                                            logging.info("Accelerometer data " + str(array))
+                                            self.socket_broadcast({"updateAccel": array})
+                                        elif msg[0] == "G":
+                                            array = get_array_from_message(msg)
+                                            logging.info("Gyroscope data " + str(array))
+                                            self.socket_broadcast({"updateGyro": array})
+                                        elif msg[0] == "M":
+                                            current, target = msg[1:-1].split("%")
+                                            array = [float(current), float(target)]
+                                            logging.info("Compass data " + str(array))
+                                            self.socket_broadcast({"updateCompass": array})
+                                        elif msg[0] == "B":
+                                            battery = float(msg[1:-1])
+                                            logging.info("Battery level: " + str(battery))
+                                            self.socket_broadcast({"updateBattery": battery})
+                                        elif msg[0] == "T":
+                                            temp = float(msg[1:-1])
+                                            logging.info("IMU temperature: " + str(temp))
+                                            self.socket_broadcast({"updateIMUTemp": temp})
+                                        elif msg[0] == "D":
+                                            dist = float(msg[1:-1])
+                                            logging.info("Distance: " + str(dist))
+                                            self.socket_broadcast({"updateDistance": dist})
+                                        else:
+                                            logging.warning("Unknown message: " + msg)
+                                    except UnicodeDecodeError:
+                                        logging.warning("Corrupted serial message.")
+                                    except (IndexError, ValueError):
+                                        logging.warning("Parsing error.")
+                                    except:
+                                        logging.exception("Serial read exception")
                             elif (now - start_time) >= 10.0:
                                 logging.info("No answer from " + port.name)
                                 self.serialPort.close()
                                 self.serialPort = None
                                 serial_retry = False
+                            elif (now - interval_time) >= 1.0:
+                                logging.info("Retrying serial ping")
+                                self.serialPort.write(">C\n".encode('utf-8'))
+                                interval_time = now
             except:
                 logging.exception("Unexpected error, Arduino is now disconnected!")
                 if self.serialPort is not None:
