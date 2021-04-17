@@ -17,6 +17,8 @@ init_logger()
 
 def get_array_from_message(msg):
     x, y, z = msg[1:-1].split("%")
+    if x == "nan" or y == "nan" or z == "nan":
+        return None
     return [float(x), float(y), float(z)]
 
 
@@ -144,17 +146,20 @@ class RoverServer:
                                             logging.info("Serial log: " + msg)
                                         elif msg[0] == "A":
                                             array = get_array_from_message(msg)
-                                            logging.info("Accelerometer data " + str(array))
-                                            self.socket_broadcast({"updateAccel": array})
+                                            if array is not None:
+                                                logging.info("Accelerometer data " + str(array))
+                                                self.socket_broadcast({"updateAccel": array})
                                         elif msg[0] == "G":
                                             array = get_array_from_message(msg)
-                                            logging.info("Gyroscope data " + str(array))
-                                            self.socket_broadcast({"updateGyro": array})
+                                            if array is not None:
+                                                logging.info("Gyroscope data " + str(array))
+                                                self.socket_broadcast({"updateGyro": array})
                                         elif msg[0] == "M":
                                             current, target = msg[1:-1].split("%")
-                                            array = [float(current), float(target)]
-                                            logging.info("Compass data " + str(array))
-                                            self.socket_broadcast({"updateCompass": array})
+                                            if current != "nan" and target != "nan":
+                                                array = [float(current), float(target)]
+                                                logging.info("Compass data " + str(array))
+                                                self.socket_broadcast({"updateCompass": array})
                                         elif msg[0] == "B":
                                             battery = float(msg[1:-1])
                                             logging.info("Battery level: " + str(battery))

@@ -176,9 +176,9 @@ class RoverUi(QtWidgets.QMainWindow):
         compass_count = len(self.compass_time_axis)
         # Add a new value on the t axis
         if compass_count > 0:
-            self.compass_time_axis.append(self.accel_time_axis[-1] + 1)
+            self.compass_time_axis.append(self.compass_time_axis[-1] + 1)
             if compass_count > 30:
-                self.compass_time_axis = self.accel_time_axis[1:]
+                self.compass_time_axis = self.compass_time_axis[1:]
                 self.compass_data = [self.compass_data[0][1:], self.compass_data[1][1:], self.compass_data[2][1:]]
         else:
             self.compass_time_axis.append(0)
