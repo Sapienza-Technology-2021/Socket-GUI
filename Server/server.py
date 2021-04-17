@@ -85,81 +85,100 @@ class RoverServer:
         if self.serialPort is not None and self.serialPort.isOpen:
             try:
                 self.serialPort.write((message + "\n").encode('utf-8'))
-                self.serialPort.flush()
             except:
-                logging.error("Could not print serial message!")
+                logging.exception("Could not print serial message!")
         else:
             logging.warning("Serial port not initialized, attempted writing")
 
     def serial_loop(self):
         while self.running:
+            logging.info("Scanning serial ports...")
             try:
-                logging.info("Scanning serial ports...")
                 for port in list_serial_ports():
                     logging.info("Attempting connection with " + port.name)
+                    if self.serialPort is not None:
+                        self.serialPort.close()
+                        self.serialPort = None
                     try:
-                        self.serialPort = serial.Serial(port=port.device, baudrate=115200,
-                                                        timeout=4, rtscts=True, dsrdtr=True, exclusive=True)
+                        # Su Linux forse bisogna aggiungere `rtscts=True, dsrdtr=True, exclusive=True`
+                        self.serialPort = serial.Serial(port=port.device, baudrate=115200, timeout=2)
                     except:
                         logging.warning(port.name + " unavailable.")
+                        self.serialPort = None
                         continue
                     time.sleep(1)
-                    self.serial_println(">C")
-                    time.sleep(0.3)
+                    self.serialPort.write(">C\n".encode('utf-8'))
+                    time.sleep(0.5)
                     start_time = time.time()
-                    while self.serialPort is not None and self.running and self.serialPort.in_waiting:
-                        response = self.serial_read_line()
-                        if response is None:
-                            self.serial_println(">C")
+                    interval_time = time.time()
+                    serial_retry = True
+                    while self.running and serial_retry:
+                        response = self.serialPort.readline().decode("utf-8").replace("\n", "").replace("\r", "")
+                        now = time.time()
+                        if response == "":
+                            if (now - interval_time) >= 1.0:
+                                logging.info("Retrying serial ping")
+                                self.serialPort.write(">C\n".encode('utf-8'))
+                                interval_time = now
+                            elif (now - start_time) >= 10.0:
+                                logging.info("No answer from " + port.name)
+                                self.serialPort.close()
+                                self.serialPort = None
+                                serial_retry = False
                         else:
                             logging.info("Board replied \"" + response + "\"")
-                        if response[1:] == ROVER_UUID:
-                            logging.info(port.device + " connected.")
-                            self.serial_println(">E0")  # Motors OFF
-                            self.motor_power_on = False
-                            self.socket_broadcast({"setMotorsPowered": self.motor_power_on})
-                            # TODO(Marco): velocità solo per provare
-                            self.serial_println(">V200")
-                            self.serialConnected = True
-                            while self.running:
-                                msg = self.serial_read_line()
-                                if msg is None:
-                                    time.sleep(0.3)
-                                elif msg[0] == "L":
-                                    logging.info("Serial log: " + msg)
-                                elif msg[0] == "A":
-                                    array = get_array_from_message(msg)
-                                    logging.info("Accelerometer data " + str(array))
-                                    self.socket_broadcast({"updateAccel": array})
-                                elif msg[0] == "G":
-                                    array = get_array_from_message(msg)
-                                    logging.info("Gyroscope data " + str(array))
-                                    self.socket_broadcast({"updateGyro": array})
-                                elif msg[0] == "M":
-                                    current, target = msg[1:-1].split("%")
-                                    array = [float(current), float(target)]
-                                    logging.info("Compass data " + str(array))
-                                    self.socket_broadcast({"updateCompass": array})
-                                elif msg[0] == "B":
-                                    battery = float(msg[1:-1])
-                                    logging.info("Battery level: " + str(battery))
-                                    self.socket_broadcast({"updateBattery": battery})
-                                elif msg[0] == "T":
-                                    temp = float(msg[1:-1])
-                                    logging.info("IMU temperature: " + str(temp))
-                                    self.socket_broadcast({"updateIMUTemp": temp})
-                                elif msg[0] == "D":
-                                    dist = float(msg[1:-1])
-                                    logging.info("Distance: " + str(dist))
-                                    self.socket_broadcast({"updateDistance": dist})
-                                else:
-                                    logging.warning("Unknown message: " + msg)
-                        elif (time.time() - start_time) >= 5000:
-                            logging.info("No answer from " + port.name)
-                            self.serialPort.close()
-                            self.serialPort = None
+                            if response[1:] == ROVER_UUID:
+                                logging.info(port.device + " connected.")
+                                self.serial_println(">E0")  # Motors OFF
+                                self.motor_power_on = False
+                                self.socket_broadcast({"setMotorsPowered": self.motor_power_on})
+                                # TODO(Marco): velocità solo per provare
+                                self.serial_println(">V200")
+                                self.serialConnected = True
+                                while self.running:
+                                    msg = self.serial_read_line()
+                                    if msg is None:
+                                        time.sleep(0.3)
+                                    elif msg[0] == "L":
+                                        logging.info("Serial log: " + msg)
+                                    elif msg[0] == "A":
+                                        array = get_array_from_message(msg)
+                                        logging.info("Accelerometer data " + str(array))
+                                        self.socket_broadcast({"updateAccel": array})
+                                    elif msg[0] == "G":
+                                        array = get_array_from_message(msg)
+                                        logging.info("Gyroscope data " + str(array))
+                                        self.socket_broadcast({"updateGyro": array})
+                                    elif msg[0] == "M":
+                                        current, target = msg[1:-1].split("%")
+                                        array = [float(current), float(target)]
+                                        logging.info("Compass data " + str(array))
+                                        self.socket_broadcast({"updateCompass": array})
+                                    elif msg[0] == "B":
+                                        battery = float(msg[1:-1])
+                                        logging.info("Battery level: " + str(battery))
+                                        self.socket_broadcast({"updateBattery": battery})
+                                    elif msg[0] == "T":
+                                        temp = float(msg[1:-1])
+                                        logging.info("IMU temperature: " + str(temp))
+                                        self.socket_broadcast({"updateIMUTemp": temp})
+                                    elif msg[0] == "D":
+                                        dist = float(msg[1:-1])
+                                        logging.info("Distance: " + str(dist))
+                                        self.socket_broadcast({"updateDistance": dist})
+                                    else:
+                                        logging.warning("Unknown message: " + msg)
+                            elif (now - interval_time) >= 1.0:
+                                logging.info("Retrying serial ping")
+                                self.serialPort.write(">C\n".encode('utf-8'))
+                                interval_time = now
+                            elif (now - start_time) >= 10.0:
+                                logging.info("No answer from " + port.name)
+                                self.serialPort.close()
+                                self.serialPort = None
+                                serial_retry = False
             except:
-                logging.error("Unexpected error, Arduino is now disconnected!")
+                logging.exception("Unexpected error, Arduino is now disconnected!")
                 if self.serialPort is not None:
                     self.serialPort.close()
                     self.serialPort = None
@@ -175,7 +194,7 @@ class RoverServer:
             self.socket.bind(("", self.port))
             self.socket.listen()
         except Exception:
-            logging.error("Init error!")
+            logging.exception("Init error!")
             time.sleep(5)
             if self.running is True:
                 logging.info("Init retry...")
@@ -203,7 +222,7 @@ class RoverServer:
         except BlockingIOError:
             logging.warning("Blocking IO error")
         except:
-            logging.error("Init error!")
+            logging.exception("Init error!")
         logging.info("Closing server...")
 
     def clients_garbage_collector(self):
@@ -267,7 +286,7 @@ class RoverServer:
         except BlockingIOError:
             logging.warning("Blocking IO error")
         except:
-            logging.error("Disconnesso " + info)
+            logging.exception("Disconnected " + info)
             conn.close()
         logging.info("Client handler stopped.")
 
@@ -278,7 +297,7 @@ class RoverServer:
                     data = json.dumps(rawData)
                     conn.send((data + "\n").encode())
                 except:
-                    logging.error("Send error")
+                    logging.exception("Send error")
                     conn.close()
 
     def ack_server_loop(self):
@@ -289,7 +308,7 @@ class RoverServer:
             self.ack_socket.bind(("", 12345))
             logging.info("Ack server listening")
         except:
-            logging.error("Ack server init error")
+            logging.exception("Ack server init error")
             time.sleep(5)
             if self.running is True:
                 logging.info("ACK init retry...")
@@ -305,7 +324,7 @@ class RoverServer:
         except socket.timeout:
             logging.info("Ack timeout.")
         except:
-            logging.error("Ack server error")
+            logging.exception("Ack server error")
         logging.info("Quitting Ack server...")
 
     ######################### ROVER METHODS #########################
@@ -378,7 +397,7 @@ if __name__ == "__main__":
             server.disconnect()
         exit(0)
     except:
-        logging.error("Error in main")
+        logging.exception("Error in main")
         if server is not None:
             server.disconnect()
         exit(1)

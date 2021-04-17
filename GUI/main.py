@@ -91,14 +91,14 @@ class RoverUi(QtWidgets.QMainWindow):
         else:
             ip = self.ipField.text()
             if ip == "":
-                QMessageBox.warning(self, "Errore", "Nessun IP inserito!")
+                QMessageBox.warning(self, "Error", "Please, write an IP address!")
             else:
                 if self.roverClient.connect(ip, PORT):
                     self.enableComponents(True)
                     self.ipField.setEnabled(False)
                     self.connectButton.setText("Disconnetti")
                 else:
-                    QMessageBox.warning(self, "Errore", "Connessione fallita!")
+                    QMessageBox.warning(self, "Error", "Connection failed!")
 
     def enableComponents(self, b):
         self.moveUp.setEnabled(b)

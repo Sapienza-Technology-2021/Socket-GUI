@@ -46,7 +46,7 @@ class RoverClient:
             self.discover_socket.settimeout(1)
             logging.info("Ack server init")
         except:
-            logging.error("Ack server init error")
+            logging.exception("Ack server init error")
             time.sleep(0.2)
             self.scan()
         while self.scan_run and not self.connected:
@@ -62,7 +62,7 @@ class RoverClient:
             except socket.timeout:
                 pass
             except:
-                logging.error("Broadcast send error")
+                logging.exception("Broadcast send error")
                 time.sleep(1)
         logging.info("Scan stopped")
 
@@ -72,7 +72,7 @@ class RoverClient:
                 data = json.dumps(data)
                 self.sock.send((data + "\n").encode())
             except:
-                logging.error("Send error!")
+                logging.exception("Send error!")
                 self.disconnect()
 
     def stop_scan(self):
@@ -96,7 +96,7 @@ class RoverClient:
         except json.JSONDecodeError:
             logging.warning("Corrupted Json dictionary!")
         except:
-            logging.error("Parsing error!")
+            logging.exception("Parsing error!")
 
     def serverHandler(self):
         logging.info("Handler thread start")
@@ -140,7 +140,7 @@ class RoverClient:
             self.sock.send(b"<PING>\n")
             return True
         except:
-            logging.error("Connection error")
+            logging.exception("Connection error")
             self.connected = False
             return False
 
@@ -193,6 +193,6 @@ if __name__ == "__main__":
         client.disconnect()
         exit(0)
     except:
-        logging.error("Error in main")
+        logging.exception("Error in main")
         client.disconnect()
         exit(1)
