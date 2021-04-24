@@ -11,6 +11,7 @@ import json
 import logging
 import serial
 from serial.tools.list_ports import comports as list_serial_ports
+from serial import SerialException
 
 init_logger()
 
@@ -178,8 +179,6 @@ class RoverServer:
                                         logging.warning("Corrupted serial message.")
                                     except (IndexError, ValueError):
                                         logging.warning("Parsing error.")
-                                    except:
-                                        logging.exception("Serial read exception")
                             elif (now - start_time) >= 10.0:
                                 logging.info("No answer from " + port.name)
                                 self.serialPort.close()
@@ -189,6 +188,11 @@ class RoverServer:
                                 logging.info("Retrying serial ping")
                                 self.serialPort.write(">C\n".encode('utf-8'))
                                 interval_time = now
+            except SerialException:
+                logging.error("Arduino is now disconnected!")
+                if self.serialPort is not None:
+                    self.serialPort.close()
+                    self.serialPort = None
             except:
                 logging.exception("Unexpected error, Arduino is now disconnected!")
                 if self.serialPort is not None:
